@@ -52,7 +52,7 @@ const add_to_history = (items) => {
   let temp = '';
   for (const element of items) {
     if (element.played_at <= lastPlayedAt) {
-      break;
+      continue;
     }
     temp += add_new_entry(element);
   }
