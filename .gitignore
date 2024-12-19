@@ -2,3 +2,4 @@
 node_modules/
 saved_responses/
 .next/
+.env.local
