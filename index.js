@@ -26,10 +26,20 @@ const todays_date_iso = () => {
   return isoDate;
 }
 
+const extract_artists = (artists_array) => {
+  const extracted = [];
+  artists_array.forEach(element => {
+    const artist = element.name == 'st3.ve0' ? 'Kendrick Lamar' : element.name;
+    extracted.push(artist);
+  });
+
+  return extracted.join('|');
+};
+
 const add_new_entry = (item) => {
   const date_time = item.played_at;
   const song = item.track.name;
-  const artist = item.track.artists[0].name;
+  const artist = extract_artists(item.track.artists);
   const album = item.track.album.name;
   const link = item.track.external_urls.spotify;
   const date_added = todays_date_iso();
