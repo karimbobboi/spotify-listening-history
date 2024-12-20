@@ -1,8 +1,8 @@
 "use client"
 
 import queryString from 'query-string';
-export const clientId = process.env.clientId;
-export const clientSecret = process.env.clientSecret;
+export const clientId = process.env.NEXT_PUBLIC_clientId;
+export const clientSecret = process.env.NEXT_PUBLIC_clientSecret;
 export const redirectUri = "http://localhost:3000/callback";
 export const scopes = "user-read-recently-played";
 
