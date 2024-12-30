@@ -166,3 +166,13 @@ a.secondary {
     filter: invert();
   }
 }
+
+.refreshBtn {
+  border: 0 solid transparent;
+  background-color: transparent;
+}
+
+.refreshBtn:active {
+  /* border: 2px solid blue; */
+  background-color: rgba(0, 0, 0, 0.3);
+}

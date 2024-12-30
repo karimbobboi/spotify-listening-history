@@ -36,17 +36,18 @@ const add_to_history = (items) => {
     }
   }
 
-  let temp = '';
+  let temp = '', num_of_entries = 0;
   for (const element of items) {
     if (element.played_at <= lastPlayedAt) {
       continue;
     }
+    num_of_entries++;
     temp += add_new_entry(element);
   }
 
   if(temp){
     fs.appendFileSync(filePath, temp, 'utf8');
-    console.log('new entries added to history');
+    console.log(`${num_of_entries} new entries added to history`);
   } else {
     console.log('no new entries added');
   }

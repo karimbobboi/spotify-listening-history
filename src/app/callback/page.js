@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import axios from 'axios';
+import Spinner from 'react-bootstrap/Spinner';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 export const clientId = process.env.NEXT_PUBLIC_clientId;
 export const clientSecret = process.env.NEXT_PUBLIC_clientSecret;
@@ -49,8 +51,10 @@ export default function Callback() {
   }, [router.query, router]);
 
   return (
-    <div>
-      <h1>Processing...</h1>
+    <div className='bg-danger' style={{backgroundColor: 'red'}}>
+      <div className='bg-primary text-center position-relative h-100 mx-auto' style={{minHeight: '100vh'}}>
+        <Spinner className='position-absolute top-50' animation="border" variant="warning"/>
+      </div>
     </div>
   );
 }

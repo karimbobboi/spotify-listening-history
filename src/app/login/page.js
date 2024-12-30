@@ -1,5 +1,5 @@
 "use client"
-
+import { useEffect, useState } from "react";
 import queryString from 'query-string';
 export const clientId = process.env.NEXT_PUBLIC_clientId;
 export const clientSecret = process.env.NEXT_PUBLIC_clientSecret;
@@ -19,9 +19,13 @@ const Login = () => {
     window.location.href = authUrl;
   };
 
+  useEffect(() => {
+    handleLogin();
+  }, [])
+
   return (
     <div>
-      <button onClick={handleLogin}>Login with Spotify</button>
+      {/* <button onClick={handleLogin}>Login with Spotify</button> */}
     </div>
   );
 };
