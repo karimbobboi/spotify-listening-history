@@ -2,11 +2,11 @@
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "bootstrap-icons/font/bootstrap-icons.css";
-import styles from "./page.module.css";
+import styles from "/src/app/page.module.css";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Row, Col, Table, Button, Spinner, Image } from "react-bootstrap";
-import NavBar from './Components/NavBar';
+import NavBar from '/src/app/Components/NavBar';
 
 export default function Home() {
   const router = useRouter();
@@ -15,6 +15,7 @@ export default function Home() {
   const [csv_data, setData] = useState([]);
   const [last_updated, setLast_updated] = useState("");
   const [access_token, setAccessToken] = useState(null);
+  const [topSong, setTopSong] = useState(null);
 
   const formatDate = (isoString) => {
     const date = new Date(isoString);
@@ -46,7 +47,6 @@ export default function Home() {
           router.push('/login');
         } else {
           const data = await response.json();
-          console.log(data)
           return data;
         }
       }
@@ -165,6 +165,24 @@ export default function Home() {
     postList();
   }, [recentTracks]);
 
+  useEffect(() => {
+    const fetchTopSong = async () => {
+      if (csv_data.length > 0 && csv_data[0].link) {
+        const most_played = get_most_played();
+        console.log(most_played);
+        const song = await fetch_song_details(most_played.song);
+        setTopSong(song);
+      }
+    };
+    
+    fetchTopSong();
+  }, [csv_data]);
+
+  useEffect(() => {
+    console.log("topSong")
+    console.log(topSong)
+  }, [topSong]);
+
   // if (loading){ 
   //   return (
   //     <div className='bg-danger' style={{backgroundColor: 'red'}}>
@@ -192,14 +210,14 @@ background: "linear-gradient(180deg, rgba(0,10,20,1) 55%, rgba(0,29,61,1) 92%, r
           </button>
         </Col>
         <Col>
-          <NavBar />
+          <NavBar activeTab={'songs'} />
         </Col>
       </Row>
       
       <Row className='pt-5'>
-        <Col className='ps-3 ms-3' sm={8}>
+        <Col className='ps-3' sm={8}>
         {loading ? (
-          <div className='bg-dark text-center position-relative h-100 mx-auto rounded' style={{minHeight: '83vh'}}>
+          <div className='bg-dark text-center position-relative h-100 mx-auto' style={{minHeight: '83vh'}}>
             <Spinner className='position-absolute top-50' animation="border" variant="warning"/>
           </div>
         ) : (
@@ -252,10 +270,22 @@ background: "linear-gradient(180deg, rgba(0,10,20,1) 55%, rgba(0,29,61,1) 92%, r
           
         )}
         </Col>
-        <Col className='me-3'>
-          <div className='bg-dark h-100 rounded'>
-            <p className='fs-4'>Overview</p>
-          </div>
+        <Col>
+          {(!topSong) ? (
+              <></>
+            ) : (
+              <>
+                <Row className='border-none'>
+                  {topSong != null && topSong.album?.images[0].url ? (
+                    <Image className='p-0 border border-0 rounded'
+                      src={topSong.album.images[0].url}
+                      alt="Album Art" />
+                  ) : (
+                    <p>No album art available</p>
+                  )}
+                </Row>
+              </>
+            )}
         </Col>
       </Row>
     </main>

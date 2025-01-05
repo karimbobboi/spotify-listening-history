@@ -1,0 +1,9 @@
+/* NavBar.css */
+.nav-pills .nav-link.active {
+    background-color: #78025B;
+    color: white;
+}
+
+.nav-link {
+    color: #B40488;
+}
