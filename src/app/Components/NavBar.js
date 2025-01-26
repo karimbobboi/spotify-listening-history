@@ -6,8 +6,7 @@ function NavBar({activeTab = ''}) {
   const [filters, setFilters] = useState(["Recently played", "Songs", "Artists", "Albums"]);
 
   return (
-    <Nav className="justify-content-end" variant="pills" activeKey={`/${activeTab}`}
-        >
+    <Nav className="justify-content-end fs-3 bg-transparent" variant="pills" activeKey={`/${activeTab}`}>
         {filters && filters.map((item, index) => {
             return index == 0 ? (
                 <Nav.Item key={index}>

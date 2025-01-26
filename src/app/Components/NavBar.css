@@ -1,9 +1,25 @@
-/* NavBar.css */
+/* @font-face {
+    font-family: 'Abel';
+    src: url('/fonts/Abel/Abel-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+  } */
+
+body {
+    font-family: 'Urbanist';
+    font-style: normal;
+}
+
 .nav-pills .nav-link.active {
-    background-color: #78025B;
+    background-color: #C8A104;
     color: white;
 }
 
 .nav-link {
-    color: #B40488;
+    color: white;
+    font-weight: 300;
+}
+
+.active {
+    font-weight: 550;
 }

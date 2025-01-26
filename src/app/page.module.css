@@ -176,3 +176,5 @@ a.secondary {
   /* border: 2px solid blue; */
   background-color: rgba(0, 0, 0, 0.3);
 }
+
+.tableCustom { --bs-table-bg: transparent !important; }
