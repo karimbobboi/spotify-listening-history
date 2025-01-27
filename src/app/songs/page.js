@@ -37,8 +37,8 @@ export default function Home() {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      // hour: "2-digit",
+      // minute: "2-digit",
     });
   };
 
@@ -292,155 +292,157 @@ export default function Home() {
   // }
 
   return (
-    // <main
-    //   className=""
-      //   style={{
-      //   height: '100vh',
-      //   background: "rgb(0,10,20)",
-      //   background: "linear-gradient(0deg, rgba(0,10,20,1) 27%, rgba(0,29,61,1) 71%, rgba(100,2,76,1) 98%)"
-      // }}
-    // >
     <main style={{ position: "relative", zIndex: 1 }}>
       <DynamicBackground />
 
       <div style={{ position: "relative", zIndex: 2 }}>
-      <Row style={{ minHeight: "27vh" }}>
-        <Col className="bg-transparent">
-          <Row className="px-3 fs-5 pt-3 bg-transparent">
-            <Col sm={2}>
-              <button
-                className={`rounded px-2 ${styles.refreshBtn}`}
-                onClick={handleRefreshClicked}
+        <Row style={{ minHeight: "27vh" }}>
+          <Col className="bg-transparent">
+            <Row className="px-3 fs-5 pt-3 bg-transparent">
+              <Col sm={2}>
+                <button
+                  className={`rounded px-2 ${styles.refreshBtn}`}
+                  onClick={handleRefreshClicked} >
+                  <i className="bi bi-arrow-repeat text-light fs-2"></i>
+                </button>
+              </Col>
+              <Col>
+                <NavBar activeTab={"songs"} />
+              </Col>
+            </Row>
+
+            <Row className="px-3 fs-5 bg-transparent">
+              <ButtonGroup className="me-auto mb-3 w-50">
+                {date_filter.map((filter, index) => {
+                  return (
+                    <Button
+                      variant={`outline-secondary ${date_filter[active_date] === filter ? "fw-bold" : ""}`}
+                      size="sm"
+                      className="mx-3 w-25 rounded-4"
+                      onClick={() => setActiveDate(date_filter.indexOf(filter))}
+                      active={date_filter[active_date] === filter}
+                      key={index} >
+                      {filter}
+                    </Button>
+                  );
+                })}
+              </ButtonGroup>
+            </Row>
+          </Col>
+        </Row>
+
+        <Row className="px-3 bg-transparent">
+          <Col className="ps-3" sm={8} style={{ minHeight: "60vh" }}>
+            {loading ? (
+              <div className="bg-dark text-center position-relative h-100 mx-auto">
+                <Spinner
+                  className="position-absolute top-50"
+                  animation="border"
+                  variant="warning"
+                />
+              </div>
+            ) : (
+              <div
+                className="table-container rounded h-100"
+                style={{
+                  overflowY: "auto",
+                  scrollbarWidth: "none",
+                  backgroundColor: "rgba(0,0,0,0.6)",
+                }}
               >
-                <i className="bi bi-arrow-repeat text-light fs-2"></i>
-              </button>
-            </Col>
-            <Col>
-              <NavBar activeTab={"songs"} />
-            </Col>
-          </Row>
-
-          <Row className="px-3 fs-5 bg-transparent">
-            <ButtonGroup className="me-auto mb-3 w-50">
-              {date_filter.map((filter, index) => {
-                return (
-                  <Button
-                    variant={`outline-secondary ${date_filter[active_date] === filter ? "fw-bold" : ""}`}
-                    size="sm"
-                    className="mx-3 w-25 rounded-4"
-                    onClick={() => setActiveDate(date_filter.indexOf(filter))}
-                    active={date_filter[active_date] === filter}
-                    key={index}
+                {csv_data && csv_data.length > 0 ? (
+                  <table 
+                    className={"table-borderless " + styles.tableCustom.className}
                   >
-                    {filter}
-                  </Button>
-                );
-              })}
-            </ButtonGroup>
-          </Row>
-        </Col>
-      </Row>
+                    <thead
+                      className="table-header"
+                      style={{
+                        position: "sticky",
+                        top: 0, zIndex: 2,
+                        backgroundColor: "rgba(0, 0, 0, 0.7)",
+                        color: "#fff",
+                      }}
+                    >
+                      <tr className="border-bottom border-bottom-3 border-secondary my-3">
+                        <th className="fs-5">Played at</th>
+                        <th className="fs-5">Track</th>
+                        <th className="fs-5">Artist</th>
+                        <th className="fs-5">Album</th>
+                      </tr>
+                    </thead>
+                    <tbody className="table-group-divider"
+                      style={{ cursor: "pointer" }}
+                    >
+                      {csv_data
+                        .toReversed()
+                        .map((item, index) => (
+                          <tr
+                            className="border-0 pt-3"
+                            key={index}
+                            onClick={() => window.open(item.link, "_blank")}
+                            style={{
+                              backgroundColor: "transparent",
+                            }} >
+                            <td className="text-light fw-light ps-2">
+                              {formatDate(item[`${Object.keys(item)[0]}`])}
+                            </td>
+                            <td className="text-light fw-bold">{item.song}</td>
+                            <td className="text-light fw-light">
+                              {item.artist.replaceAll("|", ", ")}
+                            </td>
+                            <td
+                              style={{ maxWidth: "200px" }}
+                              className="text-light fw-light pe-2 d-inline-block text-truncate"
+                            >
+                              {item.album}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-center text-light h-100 d-flex align-items-center justify-content-center">
+                    <p>No data available</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </Col>
 
-      <Row className="px-3 bg-transparent">
-        <Col className="ps-3" sm={8} style={{ maxHeight: "70vh" }}>
-          {loading ? (
-            <div className="bg-dark text-center position-relative h-100 mx-auto">
-              <Spinner
-                className="position-absolute top-50"
-                animation="border"
-                variant="warning"
-              />
-            </div>
-          ) : (
+          <Col className="d-flex flex-column align-items-center bg-transparent p-0" style={{ height: "100%" }}>
             <div
-              className="table-container border border-dark border-3 rounded h-100"
+              className="d-flex align-items-center justify-content-center w-100 rounded"
               style={{
-                overflowY: "auto",
-                scrollbarWidth: "none",
+                height: "50%", 
+                minHeight: "22rem",
+                backgroundColor: !topSong ? "rgba(0,0,0,0.6)" : "transparent",
               }}
             >
-              <table
-                className={"table-borderless " + styles.tableCustom.className}
-              >
-                <thead
-                  className="table-header"
+              {!topSong ? (
+                <p className="text-center text-light">No data available</p>
+              ) : (
+                <Image
+                  src={topSong.album?.images[0]?.url}
+                  className="rounded"
                   style={{
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 2,
-                    backgroundColor: "rgba(0, 0, 0, 0.7)",
-                    color: "#fff",
+                    width: "22rem", 
+                    height: "22rem", 
+                    objectFit: "cover",
                   }}
-                >
-                  <tr className="border-bottom border-bottom-3 border-secondary my-3">
-                    <th className="fs-5">Played at</th>
-                    <th className="fs-5">Track</th>
-                    <th className="fs-5">Artist</th>
-                    <th className="fs-5">Album</th>
-                  </tr>
-                </thead>
-                <tbody
-                  className="table-group-divider"
-                  style={{ cursor: "pointer" }}
-                >
-                  {csv_data &&
-                    csv_data.toReversed().map((item, index) => {
-                      return (
-                        <tr
-                          className="border-0 pt-3"
-                          key={index}
-                          onClick={() => window.open(item.link, "_blank")}
-                          style={{
-                            backgroundColor: "transparent",
-                          }}
-                        >
-                          <td className="text-light fw-light ps-2">
-                            {formatDate(item[`${Object.keys(item)[0]}`])}
-                          </td>
-                          <td className="text-light">{item.song}</td>
-                          <td className="text-light fw-light">
-                            {item.artist.replaceAll("|", ", ")}
-                          </td>
-                          <td
-                            style={{ maxWidth: "200px" }}
-                            className="text-light fw-light pe-2 d-inline-block text-truncate"
-                          >
-                            {item.album}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Col>
-        <Col>
-          {!topSong ? (
-            <></>
-          ) : (
-            <>
-              <Row className="border-none">
-                {topSong != null && topSong.album?.images[0].url ? (
-                  <Image
-                    className="p-0 border border-0 rounded"
-                    src={topSong.album.images[0].url}
-                    alt="Album Art"
-                  />
-                ) : (
-                  <p>No album art available</p>
-                )}
-              </Row>
-            </>
-          )}
-
-          <Row className="border-none">
-            <div className="h-100 text-center w-100">
-              <p className="fs-1 fw-semibold text-warning">{`${csv_data.length} tracks`}</p>
-            </div>
-          </Row>
-        </Col>
-      </Row>
+                />
+              )}
+              </div>
+              <div
+                className="w-100 mt-3 rounded d-flex align-items-center justify-content-center"
+                style={{
+                  height: "25%",
+                  backgroundColor: "rgba(0,0,0,0.6)",
+                }}
+              >
+                <p className="fs-1 fw-semibold text-warning m-0">{`${csv_data.length} tracks`}</p>
+              </div>
+          </Col>
+        </Row>
       </div>
     </main>
   );
