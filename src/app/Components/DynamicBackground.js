@@ -9,37 +9,42 @@ const DynamicBackground = () => {
 
     let gradientOffsetWidth = 0;
     let gradientOffsetHeight = 0;
-    let direction = true;
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
 
+    let velocityX = 3; // Horizontal velocity
+    let velocityY = 3; // Vertical velocity
+
     const drawGradient = () => {
       const width = canvas.width;
       const height = canvas.height;
 
-      // Create a gradient
       const gradient = ctx.createLinearGradient(
         -width / 2 + gradientOffsetWidth,
         -height / 2 + gradientOffsetHeight,
         width / 2 + gradientOffsetWidth,
         height + gradientOffsetHeight
       );
-      gradient.addColorStop(0, "#64024c"); // Color 1
-      gradient.addColorStop(1, "#001d3d"); // Color 2
+      gradient.addColorStop(0, "#000a14");
+      gradient.addColorStop(0.5, "#001d3d"); 
+      gradient.addColorStop(1, "#64024c"); 
 
-      // Fill the canvas with the gradient
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
-      // Update gradient offset for animation
-      gradientOffsetWidth += direction ? 1 : -1;
-      gradientOffsetHeight += direction ? 1 : -1;
+      gradientOffsetWidth += velocityX;
+      gradientOffsetHeight += velocityY;
 
-      if (gradientOffsetWidth > width || gradientOffsetWidth < 0)
-        direction = !direction;
+      // Randomly adjust velocity direction and magnitude
+      if (Math.random() < 0.01) velocityX = (Math.random() - 0.5) * 3; 
+      if (Math.random() < 0.01) velocityY = (Math.random() - 0.5) * 3; 
+
+      // Keep gradient offsets within bounds
+      if (gradientOffsetWidth > width || gradientOffsetWidth < -width) velocityX *= -3;
+      if (gradientOffsetHeight > height || gradientOffsetHeight < -height) velocityY *= -3;
     };
 
     const animate = () => {

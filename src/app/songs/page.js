@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import {
   Row,
   Col,
-  Table,
   Button,
   ButtonGroup,
   Spinner,
@@ -17,7 +16,7 @@ import {
 import NavBar from "/src/app/Components/NavBar";
 import DynamicBackground from "/src/app/Components/DynamicBackground";
 
-export default function Home() {
+export default function Songs() {
   const router = useRouter();
   const [recentTracks, setRecentTracks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,21 +25,10 @@ export default function Home() {
   const [last_updated, setLast_updated] = useState("");
   const [access_token, setAccessToken] = useState(null);
   const [topSong, setTopSong] = useState(null);
+  const [songCounts, setSongCounts] = useState(null);
 
   const date_filter = ["1 week", "2 weeks", "1 month", "6 months", "all time"];
   const [active_date, setActiveDate] = useState(date_filter.length - 1);
-
-  const formatDate = (isoString) => {
-    const date = new Date(isoString);
-
-    return date.toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      // hour: "2-digit",
-      // minute: "2-digit",
-    });
-  };
 
   const filteredDates = () => {
     const today = new Date();
@@ -95,29 +83,34 @@ export default function Home() {
 
   const get_most_played = () => {
     if (csv_data.length < 1) return;
-
+  
     const track_counts = {};
     csv_data.forEach((track) => {
       const song = track.link;
       if (!track_counts[song]) {
-        track_counts[song] = 0;
+        track_counts[song] = { ...track, count: 0 };
       }
-      track_counts[song]++;
+      track_counts[song].count++;
     });
-
+  
     let most_played = null;
     let max_count = 0;
-
+  
     for (const song in track_counts) {
-      if (track_counts[song] > max_count) {
-        max_count = track_counts[song];
-        most_played = song;
+      if (track_counts[song].count > max_count) {
+        max_count = track_counts[song].count;
+        most_played = track_counts[song];
       }
     }
-
+  
     console.log(track_counts);
+    console.log(most_played);
 
-    return { song: most_played, count: max_count };
+    const sorted_songs = Object.values(track_counts).sort(
+      (a, b) => a.count - b.count
+    );
+  
+    return { most_played, songs_dict: sorted_songs };
   };
 
   const get_top_artist = () => {
@@ -152,10 +145,9 @@ export default function Home() {
 
   const fetch_song_details = async (song) => {
     if (!access_token) return;
-    const song_code = song.includes("https://open.spotify.com/track/")
-      ? song.substring(31)
-      : "";
+    
     try {
+      const song_code = song?.includes("https://open.spotify.com/track/") ? song.substring(31) : "";
       const response = await fetch(
         `https://api.spotify.com/v1/tracks/${song_code}`,
         {
@@ -205,6 +197,7 @@ export default function Home() {
     }
 
     getRecentlyPlayed();
+    setLast_updated(new Date().toLocaleString());
   }, []);
 
   useEffect(() => {
@@ -254,12 +247,13 @@ export default function Home() {
   useEffect(() => {
     const fetchTopSong = async () => {
       if (csv_data.length > 0 && csv_data[0].link) {
-        const most_played = get_most_played();
-        console.log(most_played);
+        const most_played_song = get_most_played();
+        if(most_played_song) setSongCounts(Object.values(most_played_song.songs_dict));
+        console.log(Object.values(most_played_song.songs_dict));
         const most_played_artist = get_top_artist();
         console.log(most_played_artist);
 
-        const song = await fetch_song_details(most_played.song);
+        const song = await fetch_song_details(most_played_song.most_played.link);
         setTopSong(song);
       }
     };
@@ -280,16 +274,6 @@ export default function Home() {
     console.log(csv_data.length);
     console.log(start, end);
   }, [active_date]);
-
-  // if (loading){
-  //   return (
-  //     <div className='bg-danger' style={{backgroundColor: 'red'}}>
-  //       <div className='bg-primary text-center position-relative h-100 mx-auto' style={{minHeight: '100vh'}}>
-  //         <Spinner className='position-absolute top-50' animation="border" variant="warning"/>
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   return (
     <main style={{ position: "relative", zIndex: 1 }}>
@@ -332,7 +316,7 @@ export default function Home() {
         </Row>
 
         <Row className="px-3 bg-transparent">
-          <Col className="ps-3" sm={8} style={{ minHeight: "60vh" }}>
+          <Col className="ps-3" sm={9} style={{ minHeight: "60vh" }}>
             {loading ? (
               <div className="bg-dark text-center position-relative h-100 mx-auto">
                 <Spinner
@@ -347,55 +331,81 @@ export default function Home() {
                 style={{
                   overflowY: "auto",
                   scrollbarWidth: "none",
+                  maxHeight: "60vh",
                   backgroundColor: "rgba(0,0,0,0.6)",
                 }}
               >
-                {csv_data && csv_data.length > 0 ? (
-                  <table 
-                    className={"table-borderless " + styles.tableCustom.className}
+                {songCounts && songCounts.length > 0 ? (
+                  <table
+                    className={"table-borderless" + styles.tableCustom.className}
+                    style={{ tableLayout: "fixed" }}
                   >
                     <thead
                       className="table-header"
                       style={{
                         position: "sticky",
-                        top: 0, zIndex: 2,
+                        top: 0,
+                        zIndex: 2,
                         backgroundColor: "rgba(0, 0, 0, 0.7)",
                         color: "#fff",
                       }}
                     >
-                      <tr className="border-bottom border-bottom-3 border-secondary my-3">
-                        <th className="fs-5">Played at</th>
-                        <th className="fs-5">Track</th>
-                        <th className="fs-5">Artist</th>
-                        <th className="fs-5">Album</th>
+                      <tr className="border-bottom border-bottom-3 border-secondary">
+                        <th className="fs-5" style={{ width: "30%" }}>Track</th>
+                        <th className="fs-5" style={{ width: "35%" }}>Artist</th>
+                        <th className="fs-5" style={{ width: "30%" }}>Album</th>
+                        <th className="fs-5" style={{ width: "5%" }}>Count</th>
                       </tr>
                     </thead>
-                    <tbody className="table-group-divider"
+                    <tbody
+                      className="table-group-divider"
                       style={{ cursor: "pointer" }}
                     >
-                      {csv_data
+                      {songCounts
                         .toReversed()
                         .map((item, index) => (
                           <tr
-                            className="border-0 pt-3"
+                            className="border-0 pt-1"
                             key={index}
                             onClick={() => window.open(item.link, "_blank")}
                             style={{
                               backgroundColor: "transparent",
-                            }} >
-                            <td className="text-light fw-light ps-2">
-                              {formatDate(item[`${Object.keys(item)[0]}`])}
+                            }}
+                          >
+                            <td
+                              className="text-light fw-bold"
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: '22rem'
+                              }}
+                            >
+                              {item.song}
                             </td>
-                            <td className="text-light fw-bold">{item.song}</td>
-                            <td className="text-light fw-light">
+                            <td
+                              className="text-light fw-light"
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: '20rem'
+                              }}
+                            >
                               {item.artist.replaceAll("|", ", ")}
                             </td>
                             <td
-                              style={{ maxWidth: "200px" }}
-                              className="text-light fw-light pe-2 d-inline-block text-truncate"
+                              className="text-light fw-light"
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: '20rem'
+                              }}
                             >
                               {item.album}
                             </td>
+                            <td className="text-light text-center">{item.count}</td>
                           </tr>
                         ))}
                     </tbody>
@@ -407,35 +417,40 @@ export default function Home() {
                 )}
               </div>
             )}
+            <div>
+              <p className="text-light text-end">{`Last updated: ${last_updated}`}</p>
+            </div>
           </Col>
 
           <Col className="d-flex flex-column align-items-center bg-transparent p-0" style={{ height: "100%" }}>
             <div
-              className="d-flex align-items-center justify-content-center w-100 rounded"
-              style={{
-                height: "50%", 
-                minHeight: "22rem",
-                backgroundColor: !topSong ? "rgba(0,0,0,0.6)" : "transparent",
-              }}
-            >
-              {!topSong ? (
-                <p className="text-center text-light">No data available</p>
-              ) : (
-                <Image
-                  src={topSong.album?.images[0]?.url}
-                  className="rounded"
-                  style={{
-                    width: "22rem", 
-                    height: "22rem", 
-                    objectFit: "cover",
-                  }}
-                />
-              )}
+                className="d-flex align-items-center justify-content-center w-100 rounded"
+                style={{
+                  height: "50%",
+                  minHeight: "22rem",
+                  backgroundColor: !topSong || !topSong.album?.images[0]?.url 
+                    ? "rgba(0,0,0,0.6)" 
+                    : "transparent"
+                }}
+              >
+                {!topSong || !topSong.album?.images[0]?.url ? (
+                  <p className="text-center text-light">No data available</p>
+                ) : (
+                  <Image
+                    src={topSong.album.images[0].url}
+                    className="rounded"
+                    style={{
+                      width: "22rem",
+                      height: "22rem",
+                      objectFit: "cover",
+                    }}
+                  />
+                )}
               </div>
               <div
                 className="w-100 mt-3 rounded d-flex align-items-center justify-content-center"
                 style={{
-                  height: "25%",
+                  height: "100%",
                   backgroundColor: "rgba(0,0,0,0.6)",
                 }}
               >
