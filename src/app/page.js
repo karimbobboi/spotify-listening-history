@@ -335,13 +335,6 @@ export default function Home() {
         <Row style={{ minHeight: "27vh" }}>
           <Col className="bg-transparent">
             <Row className="px-3 fs-5 pt-3 bg-transparent">
-              <Col sm={2}>
-                <button
-                  className={`rounded px-2 ${styles.refreshBtn}`}
-                  onClick={handleRefreshClicked} >
-                  <i className="bi bi-arrow-repeat text-light fs-2"></i>
-                </button>
-              </Col>
               <Col>
                 <NavBar />
               </Col>

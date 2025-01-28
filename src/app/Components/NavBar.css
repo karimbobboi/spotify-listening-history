@@ -1,9 +1,9 @@
-/* @font-face {
+@font-face {
     font-family: 'Abel';
     src: url('/fonts/Abel/Abel-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
-  } */
+  }
 
 body {
     font-family: 'Urbanist';
@@ -11,8 +11,7 @@ body {
 }
 
 .nav-pills .nav-link.active {
-    background-color: #C8A104;
-    color: white;
+    background-color: rgba(20, 0, 15, 1);
 }
 
 .nav-link {
@@ -23,3 +22,28 @@ body {
 .active {
     font-weight: 550;
 }
+
+/* .navbar-blur {
+    background: rgba(100, 2, 76, 0.5) !important; 
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important; 
+    border-radius: 12px; 
+    padding: 10px 20px;
+    transition: all 0.3s ease-in-out;
+  } */
+  
+  .navbar-blur .nav-link {
+    color: white; /* Adjust text color */
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: background 0.3s ease-in-out;
+    
+    /* background: rgba(0, 0, 0, 0.2); */
+    background: rgba(100, 2, 76, 0.5);
+    backdrop-filter: blur(10px) !important; /* Blur effect */
+    -webkit-backdrop-filter: blur(10px) !important; 
+  }
+  
+  .navbar-blur .nav-link:hover {
+    background: rgba(0, 0, 0, 0.2); /* Light hover effect */
+  }

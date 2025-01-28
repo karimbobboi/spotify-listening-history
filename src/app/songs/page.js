@@ -289,7 +289,7 @@ export default function Songs() {
               </Col>
             </Row>
 
-            <Row className="px-3 fs-5 bg-transparent">
+            <Row className="px-3 pt-5 fs-5 bg-transparent">
               <ButtonGroup className="me-auto mb-3 w-50">
                 {date_filter.map((filter, index) => {
                   return (
@@ -310,7 +310,7 @@ export default function Songs() {
         </Row>
 
         <Row className="px-3 bg-transparent">
-          <Col className="ps-3" sm={9} style={{ minHeight: "60vh" }}>
+          <Col className="px-3" sm={9} style={{ minHeight: "60vh" }}>
             {loading ? (
               <div className="bg-dark text-center position-relative h-100 mx-auto">
                 <Spinner
@@ -433,7 +433,7 @@ export default function Songs() {
               </Stack>
           </Col>
 
-          <Col className="d-flex flex-column align-items-center bg-transparent p-0" style={{ height: "100%" }}>
+          <Col className="d-flex flex-column align-items-center bg-transparent p-0 pe-3" style={{ height: "100%" }}>
             <Stack
                 className="d-flex align-items-center justify-content-center w-100 rounded"
                 style={{
@@ -443,7 +443,7 @@ export default function Songs() {
                 }}
               >
                 {!topSong || !topSong.album?.images[0]?.url ? (
-                  <p className="text-center text-light my-auto">No data available</p>
+                  <p className="text-center text-light my-auto  ">No data available</p>
                 ) : (
                   <Image
                     src={topSong.album.images[0].url}
@@ -455,7 +455,7 @@ export default function Songs() {
                     }}
                   />
                 )}
-                <Stack className="text-start fs-5 w-100 px-2 py-2">
+                <Stack className="text-start fs-5 w-100 px-2 pt-1 pb-2">
                     {topSong && (
                         <>
                             <p className="fw-semibold text-white m-0">{topSong.name}</p>
