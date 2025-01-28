@@ -1,60 +1,111 @@
 import React, { useEffect, useRef } from "react";
+import './DynamicBackground.css';
 
-const DynamicBackground = () => {
+
+const DynamicCircles = () => {
   const canvasRef = useRef(null);
+  const maxRadius = window.innerWidth / 6;
+
+  const Color = {
+    vector: [
+      "#000a14", "#001d3d", "#64024c", "#000a14", "#001d3d", "#64024c", 
+      "#000a14", "#001d3d", "#64024c", "#000a14", "#001d3d", "#64024c", 
+      "#000a14", "#001d3d", "#64024c"
+    ],
+    getRandom: () => {
+      return Color.vector[Math.floor(Math.random() * Color.vector.length)];
+    }
+  };
+
+  class Circle {
+    constructor(
+      r_min = randomNumber(maxRadius * 0.9, 120),
+      x = randomNumber(window.innerWidth, r_min),
+      y = randomNumber(window.innerHeight, r_min),
+      dx = randomNumber(10, -20, [0]) / 30,
+      dy = randomNumber(10, -10, [0]) / 10,
+      color = Color.getRandom()
+    ) {
+      this.r_min = r_min;
+      this.x = x;
+      this.y = y;
+      this.dx = dx;
+      this.dy = dy;
+      this.color = color;
+      this.r = r_min;
+    }
+
+    side() {
+      return {
+        right: this.x + this.r,
+        left: this.x - this.r,
+        bottom: this.y + this.r,
+        top: this.y - this.r
+      };
+    }
+
+    draw(c) {
+      c.beginPath();
+      c.arc(this.x, this.y, this.r, 0, Math.PI * 2, false);
+      c.fillStyle = this.color;
+      c.fill();
+    }
+
+    run(c) {
+      // Detect collision with canvas edges
+      if (this.side().right > window.innerWidth || this.side().left < 0) this.dx *= -1;
+      if (this.side().bottom > window.innerHeight || this.side().top < 0) this.dy *= -1;
+
+      // Shrink the circle
+      if (this.r > this.r_min) this.r -= 1;
+
+      this.x += this.dx;
+      this.y += this.dy;
+
+      this.draw(c);
+    }
+  }
+
+  const randomNumber = (max = 1, min = 0, forbidden = []) => {
+    let res;
+    do {
+      res = Math.floor(min + Math.random() * (max - min));
+    } while (forbidden.includes(res));
+    return res;
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    if (!canvas) return;
+    const c = canvas.getContext("2d");
+    if (!c) return;
 
-    let gradientOffsetWidth = 0;
-    let gradientOffsetHeight = 0;
+    const circles = [];
+    const circleCount = 60;
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
 
-    let velocityX = 3; // Horizontal velocity
-    let velocityY = 3; // Vertical velocity
+    for (let i = 0; i < circleCount; i++) {
+      circles.push(new Circle());
+    }
 
-    const drawGradient = () => {
-      const width = canvas.width;
-      const height = canvas.height;
+    const animation = () => {
+      c.clearRect(0, 0, canvas.width, canvas.height);
 
-      const gradient = ctx.createLinearGradient(
-        -width / 2 + gradientOffsetWidth,
-        -height / 2 + gradientOffsetHeight,
-        width / 2 + gradientOffsetWidth,
-        height + gradientOffsetHeight
-      );
-      gradient.addColorStop(0, "#000a14");
-      gradient.addColorStop(0.5, "#001d3d"); 
-      gradient.addColorStop(1, "#64024c"); 
+      // Update circle positions
+      circles.forEach((circle) => circle.run(c));
 
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-
-      gradientOffsetWidth += velocityX;
-      gradientOffsetHeight += velocityY;
-
-      // Randomly adjust velocity direction and magnitude
-      if (Math.random() < 0.01) velocityX = (Math.random() - 0.5) * 3; 
-      if (Math.random() < 0.01) velocityY = (Math.random() - 0.5) * 3; 
-
-      // Keep gradient offsets within bounds
-      if (gradientOffsetWidth > width || gradientOffsetWidth < -width) velocityX *= -3;
-      if (gradientOffsetHeight > height || gradientOffsetHeight < -height) velocityY *= -3;
-    };
-
-    const animate = () => {
-      drawGradient();
-      requestAnimationFrame(animate);
+      // Request next frame
+      requestAnimationFrame(animation);
     };
 
     resizeCanvas();
-    animate();
+    animation();
 
+    // Handle resize event
     window.addEventListener("resize", resizeCanvas);
 
     return () => {
@@ -62,19 +113,15 @@ const DynamicBackground = () => {
     };
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        zIndex: -1,
-      }}
-    />
-  );
+  return <canvas ref={canvasRef}
+  style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    zIndex: -1,
+  }}/>;
 };
 
-export default DynamicBackground;
+export default DynamicCircles;

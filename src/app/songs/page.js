@@ -12,6 +12,7 @@ import {
   ButtonGroup,
   Spinner,
   Image,
+  Stack,
 } from "react-bootstrap";
 import NavBar from "/src/app/Components/NavBar";
 import DynamicBackground from "/src/app/Components/DynamicBackground";
@@ -25,7 +26,7 @@ export default function Songs() {
   const [last_updated, setLast_updated] = useState("");
   const [access_token, setAccessToken] = useState(null);
   const [topSong, setTopSong] = useState(null);
-  const [songCounts, setSongCounts] = useState(null);
+  const [songCounts, setSongCounts] = useState([]);
 
   const date_filter = ["1 week", "2 weeks", "1 month", "6 months", "all time"];
   const [active_date, setActiveDate] = useState(date_filter.length - 1);
@@ -280,16 +281,9 @@ export default function Songs() {
       <DynamicBackground />
 
       <div style={{ position: "relative", zIndex: 2 }}>
-        <Row style={{ minHeight: "27vh" }}>
+        <Row style={{ minHeight: "23vh" }}>
           <Col className="bg-transparent">
             <Row className="px-3 fs-5 pt-3 bg-transparent">
-              <Col sm={2}>
-                <button
-                  className={`rounded px-2 ${styles.refreshBtn}`}
-                  onClick={handleRefreshClicked} >
-                  <i className="bi bi-arrow-repeat text-light fs-2"></i>
-                </button>
-              </Col>
               <Col>
                 <NavBar activeTab={"songs"} />
               </Col>
@@ -338,7 +332,10 @@ export default function Songs() {
                 {songCounts && songCounts.length > 0 ? (
                   <table
                     className={"table-borderless" + styles.tableCustom.className}
-                    style={{ tableLayout: "fixed" }}
+                    style={{
+                      tableLayout: "fixed",
+                      borderSpacing: "0.8rem",
+                    }}
                   >
                     <thead
                       className="table-header"
@@ -350,16 +347,19 @@ export default function Songs() {
                         color: "#fff",
                       }}
                     >
-                      <tr className="border-bottom border-bottom-3 border-secondary">
-                        <th className="fs-5" style={{ width: "30%" }}>Track</th>
-                        <th className="fs-5" style={{ width: "35%" }}>Artist</th>
-                        <th className="fs-5" style={{ width: "30%" }}>Album</th>
-                        <th className="fs-5" style={{ width: "5%" }}>Count</th>
+                      <tr className="border-bottom border-bottom-3 border-secondary" style={{ color: '#D6D6D6' }}>
+                        <th className="fs-6 ps-2" style={{ width: "30%"}}>Track</th>
+                        <th className="fs-6 ps-2" style={{ width: "35%"}}>Artist</th>
+                        <th className="fs-6 ps-2" style={{ width: "30%" }}>Album</th>
+                        <th className="fs-6 px-3 py-1" style={{ width: "5%" }}>Count</th>
                       </tr>
                     </thead>
                     <tbody
-                      className="table-group-divider"
-                      style={{ cursor: "pointer" }}
+                      className="pb-2"
+                      style={{
+                        cursor: "pointer",
+                        borderSpacing: "0 0.5rem",
+                      }}
                     >
                       {songCounts
                         .toReversed()
@@ -370,6 +370,7 @@ export default function Songs() {
                             onClick={() => window.open(item.link, "_blank")}
                             style={{
                               backgroundColor: "transparent",
+                              fontSize: "1.2rem",
                             }}
                           >
                             <td
@@ -378,7 +379,8 @@ export default function Songs() {
                                 whiteSpace: "nowrap",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
-                                maxWidth: '22rem'
+                                maxWidth: '22rem',
+                                padding: "0.5rem", 
                               }}
                             >
                               {item.song}
@@ -389,7 +391,8 @@ export default function Songs() {
                                 whiteSpace: "nowrap",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
-                                maxWidth: '20rem'
+                                maxWidth: '20rem',
+                                padding: "0.5rem",
                               }}
                             >
                               {item.artist.replaceAll("|", ", ")}
@@ -400,12 +403,15 @@ export default function Songs() {
                                 whiteSpace: "nowrap",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
-                                maxWidth: '20rem'
+                                maxWidth: '20rem',
+                                padding: "0.5rem", 
                               }}
                             >
                               {item.album}
                             </td>
-                            <td className="text-light text-center">{item.count}</td>
+                            <td className="text-light text-center" style={{ padding: "0.5rem" }}>
+                              {item.count}
+                            </td>
                           </tr>
                         ))}
                     </tbody>
@@ -417,44 +423,61 @@ export default function Songs() {
                 )}
               </div>
             )}
-            <div>
-              <p className="text-light text-end">{`Last updated: ${last_updated}`}</p>
-            </div>
+              <Stack direction="horizontal" gap={3} className="p-2 d-flex justify-content-start">
+                <button
+                  className={`rounded my-auto ${styles.refreshBtn}`}
+                  onClick={handleRefreshClicked} >
+                  <i className="bi bi-arrow-repeat text-light"></i>
+                </button>
+              <p className="text-light text-end my-auto">{`Last updated: ${last_updated}`}</p>
+              </Stack>
           </Col>
 
           <Col className="d-flex flex-column align-items-center bg-transparent p-0" style={{ height: "100%" }}>
-            <div
+            <Stack
                 className="d-flex align-items-center justify-content-center w-100 rounded"
                 style={{
                   height: "50%",
                   minHeight: "22rem",
-                  backgroundColor: !topSong || !topSong.album?.images[0]?.url 
-                    ? "rgba(0,0,0,0.6)" 
-                    : "transparent"
+                  backgroundColor: "rgba(0,0,0,0.6)" 
                 }}
               >
                 {!topSong || !topSong.album?.images[0]?.url ? (
-                  <p className="text-center text-light">No data available</p>
+                  <p className="text-center text-light my-auto">No data available</p>
                 ) : (
                   <Image
                     src={topSong.album.images[0].url}
-                    className="rounded"
+                    className="rounded-top p-0"
                     style={{
-                      width: "22rem",
+                      width: "100%",
                       height: "22rem",
                       objectFit: "cover",
                     }}
                   />
                 )}
-              </div>
+                <Stack className="text-start fs-5 w-100 px-2 py-2">
+                    {topSong && (
+                        <>
+                            <p className="fw-semibold text-white m-0">{topSong.name}</p>
+                            <p className="fw-normal text-light m-0 fs-6" style={{color: '#EBEBEB'}}>
+                              {topSong.artists.map(artist => artist.name).join(', ') + " • " + topSong.album.name + " • " + topSong.album.release_date}
+                            </p>
+                        </>
+                    )}
+                </Stack>
+              </Stack>
               <div
-                className="w-100 mt-3 rounded d-flex align-items-center justify-content-center"
+                className="mt-3 px-2 pb-2 rounded d-flex align-items-center justify-content-center"
                 style={{
                   height: "100%",
+                  width: "100%",
                   backgroundColor: "rgba(0,0,0,0.6)",
                 }}
               >
-                <p className="fs-1 fw-semibold text-warning m-0">{`${csv_data.length} tracks`}</p>
+                <Stack className="text-start fs-5 w-100">
+                    <p className="fw-semibold text-warning m-0 mt-2">{`${songCounts.length} tracks`}</p>
+                    <p className="fw-semibold text-warning m-0">{`${csv_data.length} plays`}</p>
+                </Stack>
               </div>
           </Col>
         </Row>

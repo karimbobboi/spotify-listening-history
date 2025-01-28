@@ -23,12 +23,17 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [raw_csv_data, setRawData] = useState([]);
   const [csv_data, setData] = useState([]);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
   const [last_updated, setLast_updated] = useState("");
   const [access_token, setAccessToken] = useState(null);
   const [topSong, setTopSong] = useState(null);
 
   const date_filter = ["1 week", "2 weeks", "1 month", "6 months", "all time"];
   const [active_date, setActiveDate] = useState(date_filter.length - 1);
+
+  const [isHovered, setIsHovered] = useState(false);
+
 
   const formatDate = (isoString) => {
     const date = new Date(isoString);
@@ -40,6 +45,37 @@ export default function Home() {
       // hour: "2-digit",
       // minute: "2-digit",
     });
+  };
+
+  const timeAgo = (timestamp) => {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - then) / 1000);
+  
+    const minute = 60;
+    const hour = minute * 60;
+    const day = hour * 24;
+    const month = day * 30; // Approximation
+    const year = day * 365;
+  
+    if (diffInSeconds < minute) {
+      return `${diffInSeconds} second${diffInSeconds !== 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < hour) {
+      const minutes = Math.floor(diffInSeconds / minute);
+      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < day) {
+      const hours = Math.floor(diffInSeconds / hour);
+      return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < month) {
+      const days = Math.floor(diffInSeconds / day);
+      return `${days} day${days !== 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < year) {
+      const months = Math.floor(diffInSeconds / month);
+      return `${months} month${months !== 1 ? 's' : ''} ago`;
+    } else {
+      const years = Math.floor(diffInSeconds / year);
+      return `${years} year${years !== 1 ? 's' : ''} ago`;
+    }
   };
 
   const filteredDates = () => {
@@ -348,6 +384,7 @@ export default function Home() {
                   overflowY: "auto",
                   scrollbarWidth: "none",
                   backgroundColor: "rgba(0,0,0,0.6)",
+                  maxHeight: "60vh",
                 }}
               >
                 {csv_data && csv_data.length > 0 ? (
@@ -383,9 +420,20 @@ export default function Home() {
                             style={{
                               backgroundColor: "transparent",
                             }} >
-                            <td className="text-light fw-light ps-2">
-                              {formatDate(item[`${Object.keys(item)[0]}`])}
-                            </td>
+                            <td
+                            className="text-light fw-light ps-2 py-3"
+                            onMouseEnter={() => setHoveredIndex(index)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                            style={{
+                              backgroundColor: hoveredIndex === index ? "#444" : "transparent", // Highlight hovered td
+                            }}
+                          >
+                            {item[`${Object.keys(item)[0]}`] && (
+                              <span className="time-display">{
+                                hoveredIndex === index ? formatDate(item[`${Object.keys(item)[0]}`]) : item[`${Object.keys(item)[0]}`]
+                              }</span>
+                            )}
+                          </td>
                             <td className="text-light fw-bold">{item.song}</td>
                             <td className="text-light fw-light">
                               {item.artist.replaceAll("|", ", ")}
