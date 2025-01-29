@@ -47,3 +47,24 @@ a {
     color-scheme: dark;
   }
 }
+
+.date-filter-btn{
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important; 
+  
+  color: white;
+  border-color: rgba(0, 0, 0, 0.5);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: color 0.15s;
+  transition: background-color 0.15s;
+}
+
+.filter-active{
+  color: #F4F4F9;
+  background: rgba(20, 0, 15, 1);
+  border: 0.1px solid rgba(0, 0, 0, 0.5);
+}

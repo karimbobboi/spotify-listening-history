@@ -33,7 +33,7 @@ body {
   } */
   
   .navbar-blur .nav-link {
-    color: white; /* Adjust text color */
+    color: white;
     padding: 10px 15px;
     border-radius: 8px;
     transition: background 0.3s ease-in-out;

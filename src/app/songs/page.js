@@ -28,13 +28,13 @@ export default function Songs() {
   const [topSong, setTopSong] = useState(null);
   const [songCounts, setSongCounts] = useState([]);
 
-  const date_filter = ["1 week", "2 weeks", "1 month", "6 months", "all time"];
-  const [active_date, setActiveDate] = useState(date_filter.length - 1);
+  const date_filter = ["1 week", "2 weeks", "1 month", "6 months"];
+  const [active_date, setActiveDate] = useState(null);
 
   const filteredDates = () => {
     const today = new Date();
-    const rangeStart = new Date(today);
-    const rangeEnd = new Date(today);
+    let rangeStart = new Date(today);
+    let rangeEnd = new Date(today);
 
     switch (date_filter[active_date]) {
       case "1 week":
@@ -48,6 +48,10 @@ export default function Songs() {
         break;
       case "6 months":
         rangeStart.setMonth(today.getMonth() - 6);
+        break;
+      default:
+        rangeStart = null;
+        rangeEnd = null;
         break;
     }
 
@@ -179,6 +183,11 @@ export default function Songs() {
     setLoading(false);
   };
 
+  const handleDateFilterClicked = async (filter) => {
+    if (date_filter[active_date] === filter) setActiveDate(null);
+    else setActiveDate(date_filter.indexOf(filter));
+  };
+
   useEffect(() => {
     const getRecentlyPlayed = async () => {
       const data = await fetchRecentlyPlayed();
@@ -230,12 +239,12 @@ export default function Songs() {
   useEffect(() => {
     const [start, end] = filteredDates();
 
-    if (start == end) {
-      console.log("asdsad");
+    if(start == null && end == null) {
+      setData(raw_csv_data);
+    }
+    else if (start == end) {
       setData(raw_csv_data);
     } else {
-      console.log(start, end);
-      console.log(active_date);
       setData(
         raw_csv_data.filter((element) => {
           const date = element.date_time;
@@ -266,14 +275,13 @@ export default function Songs() {
     const [start, end] = filteredDates();
     if (start < end) {
       const filteredData = raw_csv_data.filter((element) => {
-        console.log(element.date_time);
         const date = new Date(element[`${Object.keys(element)[0]}`]);
         return date >= start && date <= end;
       });
       setData(filteredData);
+    } else {
+      setData(raw_csv_data);
     }
-    console.log(csv_data.length);
-    console.log(start, end);
   }, [active_date]);
 
   return (
@@ -281,7 +289,7 @@ export default function Songs() {
       <DynamicBackground />
 
       <div style={{ position: "relative", zIndex: 2 }}>
-        <Row style={{ minHeight: "23vh" }}>
+        <Row style={{ minHeight: "20vh" }}>
           <Col className="bg-transparent">
             <Row className="px-3 fs-5 pt-3 bg-transparent">
               <Col>
@@ -289,19 +297,29 @@ export default function Songs() {
               </Col>
             </Row>
 
-            <Row className="px-3 pt-5 fs-5 bg-transparent">
-              <ButtonGroup className="me-auto mb-3 w-50">
+            <Row className="px-3 pt-5 bg-transparent">
+              <ButtonGroup className="me-auto w-25"
+                style={{ 
+                  width: "fit-content"
+                }}
+              >
                 {date_filter.map((filter, index) => {
                   return (
-                    <Button
-                      variant={`outline-secondary ${date_filter[active_date] === filter ? "fw-bold" : ""}`}
-                      size="sm"
-                      className="mx-3 w-25 rounded-4"
-                      onClick={() => setActiveDate(date_filter.indexOf(filter))}
-                      active={date_filter[active_date] === filter}
-                      key={index} >
+                    <button
+                      className={ date_filter[active_date] === filter 
+                        ? "date-filter-btn filter-active fw-bold" 
+                        : "date-filter-btn border-0 fw-light"}
+                      onClick={() => handleDateFilterClicked(filter)}
+                      key={index}
+                      style={{
+                        borderTopLeftRadius: index === 0 ? "0.5rem" : "0",
+                        borderBottomLeftRadius: index === 0 ? "0.5rem" : "0",
+                        borderTopRightRadius: index === (date_filter.length - 1) ? "0.5rem" : "0",
+                        borderBottomRightRadius: index === (date_filter.length - 1) ? "0.5rem" : "0"
+                      }}
+                    >
                       {filter}
-                    </Button>
+                    </button>
                   );
                 })}
               </ButtonGroup>
@@ -309,7 +327,7 @@ export default function Songs() {
           </Col>
         </Row>
 
-        <Row className="px-3 bg-transparent">
+        <Row className="px-3 py-3 bg-transparent">
           <Col className="px-3" sm={9} style={{ minHeight: "60vh" }}>
             {loading ? (
               <div className="bg-dark text-center position-relative h-100 mx-auto">
@@ -443,7 +461,7 @@ export default function Songs() {
                 }}
               >
                 {!topSong || !topSong.album?.images[0]?.url ? (
-                  <p className="text-center text-light my-auto  ">No data available</p>
+                  <p className="text-center text-light my-auto  ">No data available. Try refreshing.</p>
                 ) : (
                   <Image
                     src={topSong.album.images[0].url}
@@ -456,14 +474,15 @@ export default function Songs() {
                   />
                 )}
                 <Stack className="text-start fs-5 w-100 px-2 pt-1 pb-2">
-                    {topSong && (
+                    {topSong && topSong.artists ? (
                         <>
                             <p className="fw-semibold text-white m-0">{topSong.name}</p>
                             <p className="fw-normal text-light m-0 fs-6" style={{color: '#EBEBEB'}}>
-                              {topSong.artists.map(artist => artist.name).join(', ') + " • " + topSong.album.name + " • " + topSong.album.release_date}
+                              {topSong.artists?.map(artist => artist?.name).join(', ') + " • " + topSong.album.name + " • " + topSong.album.release_date}
                             </p>
                         </>
-                    )}
+                    ) : (<></>)
+                  }
                 </Stack>
               </Stack>
               <div
