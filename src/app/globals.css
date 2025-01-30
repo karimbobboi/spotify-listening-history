@@ -68,3 +68,31 @@ a {
   background: rgba(20, 0, 15, 1);
   border: 0.1px solid rgba(0, 0, 0, 0.5);
 }
+
+
+.search-container {
+  display: flex;
+  align-items: center;
+  transition: width 0.3s ease-in-out;
+}
+
+.search-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.search-input {
+  width: 0;
+  opacity: 0;
+  transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  border: 1px solid #ccc;
+  padding: 5px;
+  border-radius: 0.5rem;
+}
+
+.search-container.expanded .search-input {
+  width: 150px;
+  opacity: 1;
+}

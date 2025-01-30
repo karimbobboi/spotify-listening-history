@@ -8,9 +8,9 @@ const DynamicCircles = () => {
 
   const Color = {
     vector: [
-      "#000a14", "#001d3d", "#64024c", "#000a14", "#001d3d", "#64024c", 
-      "#000a14", "#001d3d", "#64024c", "#000a14", "#001d3d", "#64024c", 
-      "#000a14", "#001d3d", "#64024c"
+      "#000a14", "#001d3d", "#001d3d", "#000a14", "#001d3d", "#001d3d", 
+      "#64024c", "#000a14", "#64024c", "#64024c", "#000a14", "#000a14", 
+      "#000a14", "#000a14", "#001d3d"
     ],
     getRandom: () => {
       return Color.vector[Math.floor(Math.random() * Color.vector.length)];

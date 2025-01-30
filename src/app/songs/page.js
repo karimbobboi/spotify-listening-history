@@ -31,6 +31,9 @@ export default function Songs() {
   const date_filter = ["1 week", "2 weeks", "1 month", "6 months"];
   const [active_date, setActiveDate] = useState(null);
 
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const filteredDates = () => {
     const today = new Date();
     let rangeStart = new Date(today);
@@ -114,6 +117,19 @@ export default function Songs() {
     const sorted_songs = Object.values(track_counts).sort(
       (a, b) => a.count - b.count
     );
+
+    if(searchTerm.length > 0) {
+      const songs = sorted_songs.filter((song) => {
+        song.count > 1
+        return song.song.toLowerCase().includes(searchTerm.toLowerCase()) 
+        || song.artist.toLowerCase().includes(searchTerm.toLowerCase())
+        || song.album.toLowerCase().includes(searchTerm.toLowerCase());}
+      );
+
+      setSongCounts(Object.values(songs));
+    }
+
+    else setSongCounts(Object.values(sorted_songs));
   
     return { most_played, songs_dict: sorted_songs };
   };
@@ -188,6 +204,20 @@ export default function Songs() {
     else setActiveDate(date_filter.indexOf(filter));
   };
 
+  const handleSearchOnBlur = async () => {
+    if(searchTerm.length > 0) {}
+    else setIsSearchOpen(false);
+  }
+
+  const handleSearchBtnClicked = async () =>{
+    setIsSearchOpen(!isSearchOpen);
+  };
+
+  const handleCancelClicked = async () => {
+    setSearchTerm("");
+    setIsSearchOpen(false);
+  }
+
   useEffect(() => {
     const getRecentlyPlayed = async () => {
       const data = await fetchRecentlyPlayed();
@@ -258,11 +288,7 @@ export default function Songs() {
     const fetchTopSong = async () => {
       if (csv_data.length > 0 && csv_data[0].link) {
         const most_played_song = get_most_played();
-        if(most_played_song) setSongCounts(Object.values(most_played_song.songs_dict));
-        console.log(Object.values(most_played_song.songs_dict));
-        const most_played_artist = get_top_artist();
-        console.log(most_played_artist);
-
+        // if(most_played_song) setSongCounts(Object.values(most_played_song.songs_dict));
         const song = await fetch_song_details(most_played_song.most_played.link);
         setTopSong(song);
       }
@@ -284,29 +310,31 @@ export default function Songs() {
     }
   }, [active_date]);
 
+  useEffect(() => {
+    get_most_played();
+  }, [searchTerm]);
+
   return (
     <main style={{ position: "relative", zIndex: 1 }}>
       <DynamicBackground />
 
       <div style={{ position: "relative", zIndex: 2 }}>
-        <Row style={{ minHeight: "20vh" }}>
-          <Col className="bg-transparent">
+        <Row className="" style={{ minHeight: "25vh" }}>
+          <Col className="bg-transparent d-flex flex-column">
             <Row className="px-3 fs-5 pt-3 bg-transparent">
               <Col>
                 <NavBar activeTab={"songs"} />
               </Col>
             </Row>
 
-            <Row className="px-3 pt-5 bg-transparent">
-              <ButtonGroup className="me-auto w-25"
-                style={{ 
-                  width: "fit-content"
-                }}
-              >
-                {date_filter.map((filter, index) => {
-                  return (
+            <Row className="px-3 pt-5 flex-grow-1"></Row>
+            
+            <Row className="px-3 bg-transparent align-items-center">
+              <Col sm={9} className="d-flex justify-content-between align-items-center py-2">
+                <ButtonGroup className="" style={{ width: "fit-content" }}>
+                  {date_filter.map((filter, index) => (
                     <button
-                      className={ date_filter[active_date] === filter 
+                      className={date_filter[active_date] === filter 
                         ? "date-filter-btn filter-active fw-bold" 
                         : "date-filter-btn border-0 fw-light"}
                       onClick={() => handleDateFilterClicked(filter)}
@@ -320,15 +348,52 @@ export default function Songs() {
                     >
                       {filter}
                     </button>
-                  );
-                })}
-              </ButtonGroup>
+                  ))}
+                </ButtonGroup>
+
+                <div className="d-flex align-items-center">
+                  <div className={`search-container pe-3 ps-3 rounded ${isSearchOpen ? "expanded" : ""}`}
+                    style={{ 
+                      fontSize: "0.9rem",
+                      width: isSearchOpen ? "17rem" : "3rem",
+                      backgroundColor: isSearchOpen ? "rgba(0, 0, 0, 0.3)" : "transparent",
+                    }}
+                  >
+                    <button 
+                      className="search-icon border-0 bg-transparent" 
+                      onClick={() => handleSearchBtnClicked()}
+                    >
+                      <i className="bi bi-search text-light"></i>
+                    </button>
+                    {isSearchOpen && (
+                      <>
+                      <input autoFocus
+                        type="text"
+                        className="search-input form-control bg-transparent border-0 py-1 pe-0 w-100 text-light"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onBlur={() => handleSearchOnBlur()}
+                        style={{
+                          outline: "none",
+                          boxShadow: "none",
+                        }}
+                      />
+                      <button 
+                      className="border-0 bg-transparent text-light py-0 ps-2" 
+                      onClick={() => handleCancelClicked()}
+                    >
+                      <i className="bi bi-x-lg"></i>
+                    </button>
+                    </>
+                    )}
+                  </div>
+                </div>
+              </Col>
             </Row>
           </Col>
         </Row>
-
-        <Row className="px-3 py-3 bg-transparent">
-          <Col className="px-3" sm={9} style={{ minHeight: "60vh" }}>
+        <Row className="px-3 py-1 bg-transparent">
+          <Col className="px-3" sm={9} style={{ minHeight: "70vh" }}>
             {loading ? (
               <div className="bg-dark text-center position-relative h-100 mx-auto">
                 <Spinner
@@ -343,7 +408,7 @@ export default function Songs() {
                 style={{
                   overflowY: "auto",
                   scrollbarWidth: "none",
-                  maxHeight: "60vh",
+                  maxHeight: "65vh",
                   backgroundColor: "rgba(0,0,0,0.6)",
                 }}
               >
@@ -441,13 +506,18 @@ export default function Songs() {
                 )}
               </div>
             )}
-              <Stack direction="horizontal" gap={3} className="p-2 d-flex justify-content-start">
+              <Stack direction="horizontal" gap={3} className="py-3 px-1 d-flex">
                 <button
-                  className={`rounded my-auto ${styles.refreshBtn}`}
-                  onClick={handleRefreshClicked} >
+                  className={`rounded p-0 ${styles.refreshBtn}`}
+                  onClick={handleRefreshClicked} style={{ fontSize: "1.3rem" }}>
                   <i className="bi bi-arrow-repeat text-light"></i>
                 </button>
-              <p className="text-light text-end my-auto">{`Last updated: ${last_updated}`}</p>
+                <p className="ms-auto my-auto"
+                  style={{
+                    color: '#EBEBEB',
+                    fontWeight: '250',  
+                  }}
+                >{`Last updated: ${last_updated}`}</p>
               </Stack>
           </Col>
 
@@ -478,7 +548,7 @@ export default function Songs() {
                         <>
                             <p className="fw-semibold text-white m-0">{topSong.name}</p>
                             <p className="fw-normal text-light m-0 fs-6" style={{color: '#EBEBEB'}}>
-                              {topSong.artists?.map(artist => artist?.name).join(', ') + " • " + topSong.album.name + " • " + topSong.album.release_date}
+                              {topSong.artists?.map(artist => artist?.name).join(', ') + " • " + topSong.album.name + " • " + topSong.album.release_date.substring(0, 4)}
                             </p>
                         </>
                     ) : (<></>)
@@ -495,7 +565,9 @@ export default function Songs() {
               >
                 <Stack className="text-start fs-5 w-100">
                     <p className="fw-semibold text-warning m-0 mt-2">{`${songCounts.length} tracks`}</p>
-                    <p className="fw-semibold text-warning m-0">{`${csv_data.length} plays`}</p>
+                    <p className="fw-semibold text-warning m-0">
+                    {`${songCounts.reduce((sum, song) => sum + song.count, 0)} plays`}
+                    </p>
                 </Stack>
               </div>
           </Col>
