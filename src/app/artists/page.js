@@ -8,8 +8,6 @@ import { useRouter } from "next/navigation";
 import {
   Row,
   Col,
-  Button,
-  ButtonGroup,
   Spinner,
   Image,
   Stack,
@@ -19,21 +17,20 @@ import DynamicBackground from "/src/app/Components/DynamicBackground";
 import DateFilter from "/src/app/Components/DateFilter";
 import SearchBar from "../Components/SearchBar";
 
-export default function Songs() {
+export default function Artists() {
   const router = useRouter();
   const [recentTracks, setRecentTracks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [raw_csv_data, setRawData] = useState([]);
   const [csv_data, setData] = useState([]);
+
   const [last_updated, setLast_updated] = useState("");
   const [access_token, setAccessToken] = useState(null);
-  const [topSong, setTopSong] = useState(null);
-  const [songCounts, setSongCounts] = useState([]);
+  const [topArtist, setTopArtist] = useState(null);
+  const [artistCounts, setArtistCounts] = useState([]);
 
   const date_filter = ["1 week", "2 weeks", "1 month", "6 months"];
   const [active_date, setActiveDate] = useState(null);
-
-  // const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const [avgPlays, setAvgPlays] = useState(0);
@@ -80,10 +77,10 @@ export default function Songs() {
     const date2 = new Date(end);
     const differenceInTime = date2 - date1; // Difference in milliseconds
     const numOfDays = differenceInTime / (1000 * 60 * 60 * 24); // Convert to days
-    const totalPlays = songCounts.reduce((sum, track) => sum + track.count, 0);
+    const totalPlays = artistCounts.reduce((sum, artist) => sum + artist.count, 0);
     const averagePlays = totalPlays / numOfDays;
-    setAvgPlays(averagePlays);
 
+    setAvgPlays(averagePlays);
     setStartDate(date1.toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
     setEndDate(date2.toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
   };
@@ -116,52 +113,59 @@ export default function Songs() {
     return;
   };
 
-  const get_most_played = () => {
+  const get_most_played_artist = () => {
     if (csv_data.length < 1) return;
   
-    const track_counts = {};
+    const artist_counts = {};
     csv_data.forEach((track) => {
-      const song = track.link;
-      if (!track_counts[song]) {
-        track_counts[song] = { ...track, count: 0 };
-      }
-      track_counts[song].count++;
+      const artist = track.artist.split("|");
+      artist.forEach((element) => {
+        if (!artist_counts[element]) {
+          artist_counts[element] = { 
+            artist: element,
+            song: track.song,
+            link: track.link, 
+            count: 0 
+          };
+        }
+        artist_counts[element].count++;
+      });
     });
   
     let most_played = null;
     let max_count = 0;
-  
-    for (const song in track_counts) {
-      if (track_counts[song].count > max_count) {
-        max_count = track_counts[song].count;
-        most_played = track_counts[song];
+
+    for (const artist in artist_counts) {
+      if (artist_counts[artist].count > max_count) {
+        max_count = artist_counts[artist].count;
+        most_played = artist_counts[artist];
       }
     }
 
-    const sorted_songs = Object.values(track_counts).sort(
+    const sorted_artists = Object.values(artist_counts).sort(
       (a, b) => a.count - b.count
     );
 
     if(searchTerm.length > 0) {
-      const songs = sorted_songs.filter((song) => {
-        song.count > 1
-        return song.song.toLowerCase().includes(searchTerm.toLowerCase()) 
-        || song.artist.toLowerCase().includes(searchTerm.toLowerCase())
-        || song.album.toLowerCase().includes(searchTerm.toLowerCase());}
+      const artists = sorted_artists.filter((artist) => {
+        artist.count > 1
+        return artist.song.toLowerCase().includes(searchTerm.toLowerCase()) 
+        || artist.artist.toLowerCase().includes(searchTerm.toLowerCase())}
       );
 
-      setSongCounts(Object.values(songs));
+      setArtistCounts(Object.values(artists));
     }
 
-    else setSongCounts(Object.values(sorted_songs));
+    else setArtistCounts(Object.values(sorted_artists));
   
-    return { most_played, songs_dict: sorted_songs };
+    return { most_played, artists_dict: sorted_artists };
   };
 
   const fetch_song_details = async (song) => {
-    if (!access_token) return;
+    if (!access_token || !song) return;
     
     try {
+      console.log("fetching song detailssss", song);
       const song_code = song?.includes("https://open.spotify.com/track/") ? song.substring(31) : "";
       const response = await fetch(
         `https://api.spotify.com/v1/tracks/${song_code}`,
@@ -184,33 +188,27 @@ export default function Songs() {
   };
 
   const fetch_artist_details = async (artist) => {
-    if (!access_token) return;
+    if (!access_token || !artist) return;
     
     try {
       const song_details = await fetch_song_details(artist?.link);
-      if(song_details) {
-        const all_artists = song_details.artists.map((artist) => artist.name);
-        const artist_details = all_artists.find((element) => element.name === artist.artist);
-        console.log("artist_details");
-        console.log(artist_details);
+      const artist_details = song_details.artists.find((element) => element.name === artist.artist);
+      const artist_id = artist_details.id;
+      const response = await fetch(
+        `https://api.spotify.com/v1/artists/${artist_id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        },
+      );
+
+      if (response) {
+        const data = await response.json();console.log("artist details", data);
+        return data;
       }
-
-      // const artist_id = artist?.link?.includes("https://open.spotify.com/track/") ? song.substring(31) : "";
-      // const response = await fetch(
-      //   `https://api.spotify.com/v1/tracks/${song_code}`,
-      //   {
-      //     headers: {
-      //       Authorization: `Bearer ${access_token}`,
-      //     },
-      //   },
-      // );
-
-      // if (response) {
-      //   const data = await response.json();
-      //   return data;
-      // }
     } catch (error) {
-      console.error("Error fetching recently played tracks:", error);
+      console.error("Error fetching artist details:", error);
     }
 
     return;
@@ -229,20 +227,6 @@ export default function Songs() {
     if (date_filter[active_date] === filter) setActiveDate(null);
     else setActiveDate(date_filter.indexOf(filter));
   };
-
-  // const handleSearchOnBlur = async () => {
-  //   if(searchTerm.length > 0) {}
-  //   else setIsSearchOpen(false);
-  // }
-
-  // const handleSearchBtnClicked = async () =>{
-  //   setIsSearchOpen(!isSearchOpen);
-  // };
-
-  // const handleCancelClicked = async () => {
-  //   setSearchTerm("");
-  //   setIsSearchOpen(false);
-  // }
 
   useEffect(() => {
     const getRecentlyPlayed = async () => {
@@ -311,15 +295,15 @@ export default function Songs() {
   }, [raw_csv_data]);
 
   useEffect(() => {
-    const fetchTopSong = async () => {
+    const fetchTopArtist = async () => {
       if (csv_data.length > 0 && csv_data[0].link) {
-        const most_played_song = get_most_played();
-        const song = await fetch_song_details(most_played_song.most_played.link);
-        setTopSong(song);
+        const most_played_artist = get_most_played_artist();
+        const top_artist = await fetch_artist_details(most_played_artist.most_played);
+        setTopArtist(top_artist);
       }
     };
 
-    fetchTopSong();
+    fetchTopArtist();
   }, [csv_data]);
 
   useEffect(() => {
@@ -338,12 +322,12 @@ export default function Songs() {
   }, [active_date]);
 
   useEffect(() => {
-    get_most_played();
+    get_most_played_artist();
   }, [searchTerm]);
 
   useEffect(() => {
     calculateAveragePlays();
-  }, [songCounts]);
+  }, [artistCounts]);
 
   return (
     <main style={{ position: "relative", zIndex: 1 }}>
@@ -354,7 +338,7 @@ export default function Songs() {
           <Col className="bg-transparent d-flex flex-column">
             <Row className="px-3 fs-5 pt-3 bg-transparent">
               <Col>
-                <NavBar activeTab={"songs"} />
+                <NavBar activeTab={"artists"} />
               </Col>
             </Row>
 
@@ -401,7 +385,7 @@ export default function Songs() {
                   backgroundColor: "rgba(0,0,0,0.3)",
                 }}
               >
-                {songCounts && songCounts.length > 0 ? (
+                {artistCounts && artistCounts.length > 0 ? (
                   <table
                     className="table-borderless"
                     style={{
@@ -422,43 +406,28 @@ export default function Songs() {
                       <tr className="" style={{ 
                         color: '#D6D6D6',
                       }}>
-                        <th className="fs-6 ps-2" style={{ width: "30%"}}>Track</th>
-                        <th className="fs-6 ps-2" style={{ width: "35%"}}>Artist</th>
-                        <th className="fs-6 ps-2" style={{ width: "30%" }}>Album</th>
-                        <th className="fs-6 px-3 py-1" style={{ width: "5%" }}>Count</th>
+                        <th className="fs-6 ps-2" style={{ width: "70%"}}>Artist</th>
+                        <th className="fs-6 ps-2" style={{ width: "30%" }}>Count</th>
                       </tr>
                     </thead>
-                    <tbody onScroll={() => console.log("scrolling")}
+                    <tbody
                       className="pb-2"
                       style={{
                         cursor: "pointer",
                         borderSpacing: "0 0.5rem",
                       }}
                     >
-                      {songCounts
+                      {artistCounts
                         .toReversed()
                         .map((item, index) => (
                           <tr 
                             className="border-0 pt-1"
                             key={index}
-                            onClick={() => window.open(item.link, "_blank")}
                             style={{
                               backgroundColor: "transparent",
                               fontSize: "1.2rem",
                             }}
                           >
-                            <td
-                              className="text-light fw-bold"
-                              style={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                maxWidth: '22rem',
-                                padding: "0.5rem", 
-                              }}
-                            >
-                              {item.song}
-                            </td>
                             <td
                               className="text-light fw-light"
                               style={{
@@ -469,19 +438,7 @@ export default function Songs() {
                                 padding: "0.5rem",
                               }}
                             >
-                              {item.artist.replaceAll("|", ", ")}
-                            </td>
-                            <td
-                              className="text-light fw-light"
-                              style={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                maxWidth: '20rem',
-                                padding: "0.5rem", 
-                              }}
-                            >
-                              {item.album}
+                              {item.artist}
                             </td>
                             <td className="text-light text-center" style={{ padding: "0.5rem" }}>
                               {item.count}
@@ -521,11 +478,11 @@ export default function Songs() {
                   backgroundColor: "rgba(0,0,0,0.6)" 
                 }}
               >
-                {!topSong || !topSong.album?.images[0]?.url ? (
+                {!topArtist || !topArtist?.images[0]?.url ? (
                   <p className="text-center text-light my-auto  ">No data available. Try refreshing.</p>
                 ) : (
                   <Image
-                    src={topSong.album.images[0].url}
+                    src={topArtist.images[0].url}
                     className="rounded-top p-0"
                     style={{
                       width: "100%",
@@ -535,11 +492,11 @@ export default function Songs() {
                   />
                 )}
                 <Stack className="text-start fs-5 w-100 px-2 pt-1 pb-2">
-                    {topSong && topSong.artists ? (
+                    {topArtist ? (
                         <>
-                            <p className="fw-semibold text-white m-0 text-truncate" style={{maxWidth: '21rem'}}>{topSong.name}</p>
+                            <p className="fw-semibold text-white m-0 text-truncate" style={{maxWidth: '21rem'}}>{topArtist.name}</p>
                             <p className="fw-normal text-light m-0 fs-6" style={{color: '#EBEBEB'}}>
-                              {topSong.artists?.map(artist => artist?.name).join(', ') + " • " + topSong.album.name + " • " + topSong.album.release_date.substring(0, 4)}
+                              {topArtist.genres?.join(' • ')}
                             </p>
                         </>
                     ) : (<></>)
@@ -555,13 +512,10 @@ export default function Songs() {
                 }}
               >
                 <Stack className="text-start fs-5 w-100 pt-1" gap={0}>
-                  <p className="fw-normal text-warning m-0 fs-5">{`${songCounts.length} tracks`}</p>
-                  <p className="fw-normal text-warning fs-5 m-0">
-                  {`${songCounts.reduce((sum, song) => sum + song.count, 0)} plays`}
-                </p>
-                <p className="fw-normal text-warning mb-0 fs-5">
-                  {`${avgPlays.toFixed(2)} plays per day`}
-                </p>
+                  <p className="fw-normal text-warning m-0 fs-5">{`${artistCounts.length} artists`}</p>
+                  <p className="fw-normal text-warning mb-0 fs-5">
+                    {`${avgPlays.toFixed(2)} unique artists per day`}
+                  </p>
                 </Stack>
               </div>
           </Col>

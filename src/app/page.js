@@ -382,7 +382,7 @@ export default function Home() {
               >
                 {csv_data && csv_data.length > 0 ? (
                   <table 
-                    className={"table-borderless " + styles.tableCustom.className}
+                    className={"table-borderless"}
                   >
                     <thead
                       className="table-header"

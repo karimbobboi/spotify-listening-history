@@ -73,7 +73,6 @@ export async function POST(request) {
       stream.on("end", resolve);
       stream.on("error", reject);
     });
-
     return NextResponse.json(updatedResults, { status: 200 });
   } catch (error) {
     console.error("Error updating CSV:", error);
