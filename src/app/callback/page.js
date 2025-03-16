@@ -15,6 +15,7 @@ export default function Callback() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const code = searchParams.get('code' || null);
+  const target_page = searchParams.get('page') ?? '';
 
   useEffect(() => {
     const fetchAccessToken = async () => {
@@ -37,9 +38,10 @@ export default function Callback() {
           }
         );
         
-        const { access_token } = response.data;
+        const { access_token, refresh_token } = response.data;
         if (access_token) {
           localStorage.setItem("spotify_access_token", access_token);
+          localStorage.setItem("spotify_refresh_token", refresh_token);
           router.push("/");
         }
       } catch (error) {

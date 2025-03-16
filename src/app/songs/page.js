@@ -127,16 +127,6 @@ export default function Songs() {
       }
       track_counts[song].count++;
     });
-  
-    let most_played = null;
-    let max_count = 0;
-  
-    for (const song in track_counts) {
-      if (track_counts[song].count > max_count) {
-        max_count = track_counts[song].count;
-        most_played = track_counts[song];
-      }
-    }
 
     const sorted_songs = Object.values(track_counts).sort(
       (a, b) => a.count - b.count
@@ -155,7 +145,9 @@ export default function Songs() {
 
     else setSongCounts(Object.values(sorted_songs));
   
-    return { most_played, songs_dict: sorted_songs };
+    return { 
+      most_played: sorted_songs[sorted_songs.length - 1], 
+      songs_dict: sorted_songs };
   };
 
   const fetch_song_details = async (song) => {

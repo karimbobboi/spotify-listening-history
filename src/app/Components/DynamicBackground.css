@@ -9,6 +9,6 @@ body {
   canvas {
     pointer-events: none;
     cursor: pointer;
-    filter: blur(200px);
+    filter: blur(90px);
     transform: scale(1.3);
   }
