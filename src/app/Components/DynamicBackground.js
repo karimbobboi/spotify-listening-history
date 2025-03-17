@@ -8,9 +8,9 @@ const DynamicCircles = () => {
 
   const Color = {
     vector: [
-      "#00B4D8", "#0096C7", "#48CAE4", "#90E0EF", "#023E8A",  // Teal/Blue spectrum
-      "#FF4D6D", "#FF7F50", "#FF8C64", "#FF9B7D", "#E85D04",  // Orange/Coral spectrum
-      "#03045E", "#0077B6", "#CAF0F8", "#FB8500", "#FFB703"   // Additional gradient colors
+      "#000a14", "#001d3d", "#001d3d", "#000a14", "#001d3d", "#001d3d", 
+      "#64024c", "#000a14", "#64024c", "#64024c", "#000a14", "#000a14", 
+      "#000a14", "#000a14", "#001d3d" // Additional gradient colors
     ],
     getRandom: () => {
       return Color.vector[Math.floor(Math.random() * Color.vector.length)];

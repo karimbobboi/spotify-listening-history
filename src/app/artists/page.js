@@ -200,7 +200,7 @@ export default function Artists() {
       );
 
       if (response) {
-        const data = await response.json();
+        const data = await response.json();console.log("selectedArtistIndex", selectedArtistIndex)
         return data;
       }
     } catch (error) {
@@ -345,16 +345,26 @@ export default function Artists() {
 
   useEffect(() => {
     calculateAveragePlays();
-    if(artistCounts.length > 0) setSelectedArtistIndex(0);
+    if(artistCounts.length > 0) {
+      setSelectedArtistIndex(0);
+      const artist = artistCounts[artistCounts.length - 1];
+      setSelectedArtist(artist);
+    }
   }, [artistCounts]);
 
   useEffect(() => {
     if(selectedArtistIndex >= 0) {
       const artist = artistCounts[(artistCounts.length - selectedArtistIndex) - 1];
       setSelectedArtist(artist || null);
-      console.log(artist);
     }
   }, [selectedArtistIndex]);
+
+  useEffect(() => {
+    if(csv_data.length > 0 && !selectedArtist) {
+      const { most_played } = get_most_played_artist();
+      setSelectedArtist(most_played);
+    }
+  }, [csv_data]);
 
   const [selectedTopTrack, setSelectedTopTrack] = useState(null);
   useEffect(() => {
@@ -417,9 +427,6 @@ export default function Artists() {
               </Col>
 
               <Col>
-                  <p className="text-end fw-light text-warning fs-5 my-auto me-2">
-                    {`${startDate} - ${endDate}`}
-                  </p>
               </Col>
             </Row>
           </Col>
@@ -512,74 +519,111 @@ export default function Artists() {
                             <h3 className="text-light mb-1">{selectedArtist.artist}</h3>
                             
                             <div className="mb-1">
-                              <div className="d-flex justify-content-between mb-2">
-                                <span className="text-light">Total Plays</span>
-                                <span className="text-warning">{selectedArtist.count}</span>
-                              </div>
-                              <div className="d-flex justify-content-between mb-2">
-                                <span className="text-light">% of Total</span>
-                                <span className="text-warning">
-                                  {((selectedArtist.count / csv_data.length) * 100).toFixed(1)}%
-                                </span>
-                              </div>
-                              
-                              {/* First Listen Information */}
-                              <div className="mt-1 p-3 rounded" style={{ backgroundColor: "rgba(255,255,255,0.05)" }}>
-                                {(() => {
-                                  const firstTrack = csv_data
-                                    .find(track => track.artist.includes(selectedArtist.artist));
-                                    const date_time = `${Object.keys(csv_data[0])[0]}`;
-                                    console.log("firstTrack", firstTrack[date_time]);
-                                  
-                                  const uniqueTracks = new Set(
-                                    csv_data
-                                      .filter(track => track.artist.includes(selectedArtist.artist))
-                                      .map(track => track.song)
-                                  );
-
-                                  return (
-                                    <>
-                                      <p className="text-light mb-1">First time you listened to</p>
-                                      <p className="text-warning mb-1 fw-bold">{selectedArtist.artist}</p>
-                                      <p className="text-light mb-1">was with the song</p>
-                                      <p className="text-warning mb-1 fw-bold">{firstTrack?.song}</p>
-                                      <p className="text-light mb-3">on {new Date(firstTrack[date_time]).toLocaleDateString("en-GB", 
-                                        { 
-                                          day: "numeric",
-                                          month: "long",
-                                          year: "numeric"
-                                        }
-                                      )}</p>
-                                      
-                                      <div className="border-top pt-3" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-                                        <p className="text-light mb-1">You've listened to</p>
-                                        <p className="text-warning mb-1 fw-bold">{uniqueTracks.size} unique tracks</p>
-                                        <p className="text-light mb-1">by {selectedArtist.artist} since</p>
-                                        <p className="text-warning mb-0 fw-bold">
-                                          {new Date(firstTrack[date_time]).toLocaleDateString("en-GB", 
-                                            { 
-                                              month: "long",
-                                              year: "numeric"
-                                            }
-                                          )}
-                                        </p>
-                                      </div>
-                                    </>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-
-                            {topArtist && selectedArtist.artist === topArtist.name && (
-                              <div>
-                                <div className="mb-2">
-                                  <span className="text-light">Genres</span>
-                                  <div className="text-warning small">
-                                    {topArtist.genres?.join(', ')}
+                              <div className="mt-3 p-2 rounded" style={{ backgroundColor: "rgba(255,255,255,0.05)" }}>
+                                <h5 className="text-warning mb-2">Top Tracks</h5>
+                                {get_most_played_songs()?.map((song, index) => (
+                                  <div key={index} className="d-flex justify-content-between align-items-center py-1">
+                                    <Stack direction="horizontal" className="my-auto" gap={2}>
+                                      <span className="text-light opacity-50" style={{fontSize: '1rem'}}>{`#${index + 1}`}</span>
+                                        <div className="text-light text-truncate" style={{fontSize: '1.1rem', maxWidth: '250px'}}>
+                                          {song.song}
+                                        </div>
+                                        <div className="text-light text-end opacity-50" style={{fontSize: '1rem'}}>
+                                          {song.count} plays
+                                        </div>
+                                      </Stack>
                                   </div>
+                                ))}
+                              </div>
+                              <div className="mt-3 p-2 rounded" style={{ backgroundColor: "rgba(255,255,255,0.05)" }}>
+                                <div className="d-flex justify-content-between mb-2">
+                                  <span className="text-light">Total Plays</span>
+                                  <span className="text-warning">{selectedArtist.count}</span>
+                                </div>
+                                <div className="d-flex justify-content-between">
+                                  <span className="text-light">% of Total</span>
+                                  <span className="text-warning">
+                                    {((selectedArtist.count / csv_data.length) * 100).toFixed(1)}%
+                                  </span>
                                 </div>
                               </div>
-                            )}
+
+                              <Row className="mt-3" style={{ fontSize: "1rem" }}>
+                                <Col sm={6}>
+                                  <div className="p-3 rounded h-100" style={{ backgroundColor: "rgba(255,255,255,0.05)" }}>
+                                    {(() => {
+                                      const firstTrack = csv_data
+                                        .find(track => track.artist.includes(selectedArtist.artist));
+                                        const date_time = `${Object.keys(csv_data[0])[0]}`;console.log("firstTrack", firstTrack)
+                                      
+                                      return (
+                                        <>
+                                          <p className="text-light mb-0">
+                                            First time you listened to{' '}
+                                            <span className="text-warning fw-bold">{selectedArtist.artist}</span>
+                                            {' '}was with the song{' '}
+                                            <span className="text-warning fw-bold"
+                                              onClick={() => {
+                                                if (firstTrack?.link) {
+                                                  window.open(firstTrack.link, '_blank');
+                                                }
+                                              }}
+                                              style={{ cursor: 'pointer' }}
+                                            >
+                                              {firstTrack?.song.split('(')[0]}</span>
+                                            {' '}on{' '}
+                                            <span className="text-warning fw-bold">
+                                              {new Date(firstTrack[date_time]).toLocaleDateString("en-GB", 
+                                                { 
+                                                  day: "numeric",
+                                                  month: "long",
+                                                  year: "numeric"
+                                                }
+                                              )}
+                                            </span>
+                                          </p>
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                </Col>
+                                <Col sm={6}>
+                                  <div className="p-3 rounded h-100" style={{ backgroundColor: "rgba(255,255,255,0.05)" }}>
+                                    {(() => {
+                                      const firstTrack = csv_data
+                                        .find(track => track.artist.includes(selectedArtist.artist));
+                                        const date_time = `${Object.keys(csv_data[0])[0]}`;
+                                      
+                                      const uniqueTracks = new Set(
+                                        csv_data
+                                          .filter(track => track.artist.includes(selectedArtist.artist))
+                                          .map(track => track.song)
+                                      );
+
+                                      return (
+                                        <>
+                                          <p className="text-light mb-0">
+                                            You've listened to{' '}
+                                            <span className="text-warning fw-bold">{uniqueTracks.size} unique tracks</span>
+                                            {' '}by{' '}
+                                            <span className="text-warning fw-bold">{selectedArtist.artist}</span>
+                                            {' '}since{' '}
+                                            <span className="text-warning fw-bold">
+                                              {new Date(firstTrack[date_time]).toLocaleDateString("en-GB", 
+                                                { 
+                                                  month: "long",
+                                                  year: "numeric"
+                                                }
+                                              )}
+                                            </span>
+                                          </p>
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                </Col>
+                              </Row>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -588,32 +632,46 @@ export default function Artists() {
                     <Col sm={3} className="ps-2">
                       <div>
                         {selectedArtistDetails && selectedArtistDetails.images && selectedArtistDetails.images.length > 0 && (
-                          <div className="mb-1 rounded">
+                          <div className="mb-2 rounded">
                             <Image
                               src={selectedArtistDetails.images[0].url}
                               width="100%"
                               height="276rem"
-                              className="rounded mb-3"
+                              className="rounded"
                               style={{ objectFit: "cover" }}
                             />
                           </div>
                         )}
-                        <div className="rounded p-2" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
-                          <h5 className="text-warning mb-2">Top Tracks</h5>
-                          {get_most_played_songs()?.map((song, index) => (
-                            <div key={index} className="d-flex justify-content-between align-items-center py-1">
-                              <Stack direction="horizontal" className="my-auto" gap={2}>
-                                <span className="text-light opacity-50" style={{fontSize: '1rem'}}>{`#${index + 1}`}</span>
-                                  <div className="text-light text-truncate" style={{fontSize: '1.1rem', maxWidth: '250px'}}>
-                                    {song.song}
+                        {topArtist && selectedArtistDetails && selectedArtistDetails.genres && selectedArtistDetails.genres.length > 0 && (
+                          <div className="rounded p-2" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+                            <Row>
+                              <Col>
+                                <div>
+                                  <div className="mb-2">
+                                    <span className="text-light">Genres</span>
+                                    <div className="text-warning small">
+                                      {selectedArtistDetails.genres.join(", ")}
+                                    </div>
                                   </div>
-                                  <div className="text-light text-end opacity-50" style={{fontSize: '1rem'}}>
-                                    {song.count} plays
-                                  </div>
-                                </Stack>
-                            </div>
-                          ))}
-                        </div>
+                                </div>
+                              </Col>
+                              <Col sm={2}>
+                                <Image 
+                                  className="float-end my-3"
+                                  src="https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg"
+                                  width={20}
+                                  height={20}
+                                  style={{ cursor: 'pointer' }}
+                                  onClick={() => {
+                                    if (selectedArtistDetails?.external_urls?.spotify) {
+                                      window.open(selectedArtistDetails.external_urls.spotify, '_blank');
+                                    }
+                                  }}
+                                />
+                              </Col>
+                            </Row>
+                          </div>
+                        )}
                       </div>
                     </Col>
                   </>
