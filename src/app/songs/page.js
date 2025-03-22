@@ -8,8 +8,6 @@ import { useRouter } from "next/navigation";
 import {
   Row,
   Col,
-  Button,
-  ButtonGroup,
   Spinner,
   Image,
   Stack,
@@ -29,6 +27,7 @@ export default function Songs() {
   const [access_token, setAccessToken] = useState(null);
   const [topSong, setTopSong] = useState(null);
   const [songCounts, setSongCounts] = useState([]);
+  const [isDescending, setIsDescending] = useState(true);
 
   const date_filter = ["1 week", "2 weeks", "1 month", "6 months"];
   const [active_date, setActiveDate] = useState(null);
@@ -175,39 +174,6 @@ export default function Songs() {
     return;
   };
 
-  const fetch_artist_details = async (artist) => {
-    if (!access_token) return;
-    
-    try {
-      const song_details = await fetch_song_details(artist?.link);
-      if(song_details) {
-        const all_artists = song_details.artists.map((artist) => artist.name);
-        const artist_details = all_artists.find((element) => element.name === artist.artist);
-        console.log("artist_details");
-        console.log(artist_details);
-      }
-
-      // const artist_id = artist?.link?.includes("https://open.spotify.com/track/") ? song.substring(31) : "";
-      // const response = await fetch(
-      //   `https://api.spotify.com/v1/tracks/${song_code}`,
-      //   {
-      //     headers: {
-      //       Authorization: `Bearer ${access_token}`,
-      //     },
-      //   },
-      // );
-
-      // if (response) {
-      //   const data = await response.json();
-      //   return data;
-      // }
-    } catch (error) {
-      console.error("Error fetching recently played tracks:", error);
-    }
-
-    return;
-  };
-
   const handleRefreshClicked = async () => {
     setLoading(true);
     const data = await fetchRecentlyPlayed();
@@ -222,19 +188,33 @@ export default function Songs() {
     else setActiveDate(date_filter.indexOf(filter));
   };
 
-  // const handleSearchOnBlur = async () => {
-  //   if(searchTerm.length > 0) {}
-  //   else setIsSearchOpen(false);
-  // }
+  const handleDownloadCSV = () => {
+    if (!csv_data || csv_data.length === 0) return;
+    
+    const csvRows = csv_data.map(track => {
+      const date = new Date(track[`${Object.keys(track)[0]}`]);
+      return [
+        `"${date.toISOString()}"`,
+        `"${track.song}"`,
+        `"${track.artist}"`,
+        `"${track.album}"`,
+        `"${track.link}"`,
+        `"${new Date().toISOString()}"`
+      ].join(',');
+    });
 
-  // const handleSearchBtnClicked = async () =>{
-  //   setIsSearchOpen(!isSearchOpen);
-  // };
+    const csvContent = `"date_time","song","artist","album","link","last_updated"\n${csvRows.join('\n')}`;
 
-  // const handleCancelClicked = async () => {
-  //   setSearchTerm("");
-  //   setIsSearchOpen(false);
-  // }
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'spotify_listening_history.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     const getRecentlyPlayed = async () => {
@@ -287,10 +267,7 @@ export default function Songs() {
   useEffect(() => {
     const [start, end] = filteredDates();
 
-    if(start == null && end == null) {
-      setData(raw_csv_data);
-    }
-    else if (start == end) {
+    if (start == end) {
       setData(raw_csv_data);
     } else {
       setData(
@@ -385,177 +362,195 @@ export default function Songs() {
               </div>
             ) : (
               <div
-                className="table-container rounded h-100"
+                className="table-container rounded border border-dark"
                 style={{
-                  overflowY: "auto",
-                  scrollbarWidth: "none",
-                  maxHeight: "65vh",
-                  backgroundColor: "rgba(0,0,0,0.3)",
+                  backgroundColor: "rgba(0,0,0,0.6)",
                 }}
               >
-                {songCounts && songCounts.length > 0 ? (
-                  <table
-                    className="table-borderless"
-                    style={{
-                      tableLayout: "fixed",
-                      borderSpacing: "0.8rem",
-                    }}
-                  >
-                    <thead
-                      className="table-header"
+                <div
+                  className="rounded"
+                  style={{
+                    overflowY: "auto",
+                    scrollbarWidth: "none",
+                    maxHeight: "60vh",
+                  }}
+                >
+                  {songCounts && songCounts.length > 0 ? (
+                    <table
+                      className="table-borderless w-100 mb-0"
                       style={{
-                        position: "sticky",
-                        top: 0,
-                        zIndex: 2,
-                        backgroundColor: "rgba(0, 0, 0, 0.4)",
-                        color: "#fff",
+                        tableLayout: "fixed",
+                        borderCollapse: "separate",
+                        borderSpacing: "0",
                       }}
                     >
-                      <tr className="" style={{ 
-                        color: '#D6D6D6',
-                      }}>
-                        <th className="fs-6 ps-2" style={{ width: "30%"}}>Track</th>
-                        <th className="fs-6 ps-2" style={{ width: "35%"}}>Artist</th>
-                        <th className="fs-6 ps-2" style={{ width: "30%" }}>Album</th>
-                        <th className="fs-6 px-3 py-1" style={{ width: "5%" }}>Count</th>
-                      </tr>
-                    </thead>
-                    <tbody onScroll={() => console.log("scrolling")}
-                      className="pb-2"
-                      style={{
-                        cursor: "pointer",
-                        borderSpacing: "0 0.5rem",
-                      }}
-                    >
-                      {songCounts
-                        .toReversed()
-                        .map((item, index) => (
+                      <thead
+                        className="sticky-top"
+                        style={{
+                          backgroundColor: "rgba(0, 0, 0, 0.8)",
+                          backdropFilter: "blur(10px)",
+                          borderBottom: "1px solid rgba(255,255,255,0.1)",
+                        }}
+                      >
+                        <tr style={{ color: '#D6D6D6' }}>
+                          <th className="fs-6 ps-3 py-2 rounded-top-start" style={{ width: "5%" }}>#</th>
+                          <th className="fs-6 ps-2 py-2" style={{ width: "30%" }}>Title</th>
+                          <th className="fs-6 ps-2 py-2" style={{ width: "25%" }}>Artist</th>
+                          <th className="fs-6 ps-2 py-2" style={{ width: "25%" }}>Album</th>
+                          <th className="fs-6 pe-3 py-2 text-end rounded-top-end" style={{ width: "15%" }}>
+                            <div className="d-flex justify-content-end align-items-center gap-2">
+                              Plays
+                              <button
+                                className="btn btn-link p-0 m-0"
+                                onClick={() => setIsDescending(!isDescending)}
+                                style={{ 
+                                  textDecoration: 'none',
+                                  transition: 'transform 0.2s ease-in-out'
+                                }}
+                              >
+                                <i className={`bi bi-sort-${isDescending ? 'down' : 'up'} text-warning opacity-75`}></i>
+                              </button>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(isDescending ? songCounts.toReversed() : songCounts).map((item, index) => (
                           <tr 
-                            className="border-0 pt-1"
                             key={index}
                             onClick={() => window.open(item.link, "_blank")}
                             style={{
                               backgroundColor: "transparent",
-                              fontSize: "1.2rem",
+                              transition: "all 0.2s ease-in-out",
+                              cursor: "pointer",
+                            }}
+                            className={`hover-opacity-80 ${index === (isDescending ? songCounts.length - 1 : 0) ? 'rounded-bottom' : ''}`}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "transparent";
                             }}
                           >
-                            <td
-                              className="text-light fw-bold"
-                              style={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                maxWidth: '22rem',
-                                padding: "0.5rem", 
-                              }}
-                            >
-                              {item.song}
+                            <td className={`text-light opacity-50 ps-3 py-2 ${index === (isDescending ? songCounts.length - 1 : 0) ? 'rounded-bottom-start' : ''}`}>
+                              {isDescending ? index + 1 : songCounts.length - index}
                             </td>
-                            <td
-                              className="text-light fw-light"
-                              style={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                maxWidth: '20rem',
-                                padding: "0.5rem",
-                              }}
-                            >
-                              {item.artist.replaceAll("|", ", ")}
+                            <td className="ps-2 py-2">
+                              <div className="text-light fw-semibold" style={{fontSize: "1.1rem"}}>
+                                {item.song}
+                              </div>
                             </td>
-                            <td
-                              className="text-light fw-light"
-                              style={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                maxWidth: '20rem',
-                                padding: "0.5rem", 
-                              }}
-                            >
-                              {item.album}
+                            <td className="ps-2 py-2">
+                              <div className="text-light opacity-90">
+                                {item.artist.replaceAll("|", ", ")}
+                              </div>
                             </td>
-                            <td className="text-light text-center" style={{ padding: "0.5rem" }}>
-                              {item.count}
+                            <td className="ps-2 py-2">
+                              <div className="text-light opacity-75">
+                                {item.album}
+                              </div>
+                            </td>
+                            <td className={`pe-3 py-2 text-end ${index === (isDescending ? songCounts.length - 1 : 0) ? 'rounded-bottom-end' : ''}`}>
+                              <div className="text-warning fw-semibold">
+                                {item.count}
+                              </div>
                             </td>
                           </tr>
                         ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="text-center text-light h-100 d-flex align-items-center justify-content-center">
-                    <p>No data available</p>
-                  </div>
-                )}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="text-center text-light h-100 d-flex align-items-center justify-content-center p-4 rounded">
+                      <p className="mb-0">No songs found</p>
+                    </div>
+                  )}
+                </div>
+                <Stack direction="horizontal" gap={2} className="px-2 py-1">
+                  <button
+                    className={`rounded p-1 ${styles.refreshBtn}`}
+                    onClick={handleRefreshClicked} 
+                    title="Refresh listening history"
+                    style={{ 
+                      fontSize: "1rem",
+                      backgroundColor: "transparent",
+                      border: "none",
+                      transition: "opacity 0.2s ease-in-out"
+                    }}>
+                    <i className="bi bi-arrow-repeat text-light"></i>
+                  </button>
+                  <button
+                    className={`rounded p-1 ${styles.refreshBtn}`}
+                    onClick={handleDownloadCSV}
+                    title="Download as CSV file"
+                    style={{ 
+                      fontSize: "1rem",
+                      backgroundColor: "transparent",
+                      border: "none",
+                      transition: "opacity 0.2s ease-in-out"
+                    }}>
+                    <i className="bi bi-file-earmark-arrow-down text-light"></i>
+                  </button>
+                  <p className="ms-auto my-0 small text-light opacity-75"
+                    style={{
+                      fontWeight: '250',  
+                    }}
+                  >{`Last updated: ${last_updated}`}</p>
+                </Stack>
               </div>
             )}
-              <Stack direction="horizontal" gap={3} className="py-3 px-1 d-flex">
-                <button
-                  className={`rounded p-0 ${styles.refreshBtn}`}
-                  onClick={handleRefreshClicked} style={{ fontSize: "1.3rem" }}>
-                  <i className="bi bi-arrow-repeat text-light"></i>
-                </button>
-                <p className="ms-auto my-auto"
-                  style={{
-                    color: '#EBEBEB',
-                    fontWeight: '250',  
-                  }}
-                >{`Last updated: ${last_updated}`}</p>
-              </Stack>
           </Col>
 
           <Col className="d-flex flex-column align-items-center bg-transparent p-0 pe-3" style={{ height: "100%" }}>
             <Stack
-                className="d-flex align-items-center justify-content-center w-100 rounded"
-                style={{
-                  height: "50%",
-                  minHeight: "22rem",
-                  backgroundColor: "rgba(0,0,0,0.6)" 
-                }}
-              >
-                {!topSong || !topSong.album?.images[0]?.url ? (
-                  <p className="text-center text-light my-auto  ">No data available. Try refreshing.</p>
-                ) : (
-                  <Image
-                    src={topSong.album.images[0].url}
-                    className="rounded-top p-0"
-                    style={{
-                      width: "100%",
-                      height: "22rem",
-                      objectFit: "cover",
-                    }}
-                  />
-                )}
-                <Stack className="text-start fs-5 w-100 px-2 pt-1 pb-2">
-                    {topSong && topSong.artists ? (
-                        <>
-                            <p className="fw-semibold text-white m-0 text-truncate" style={{maxWidth: '21rem'}}>{topSong.name}</p>
-                            <p className="fw-normal text-light m-0 fs-6" style={{color: '#EBEBEB'}}>
-                              {topSong.artists?.map(artist => artist?.name).join(', ') + " • " + topSong.album.name + " • " + topSong.album.release_date.substring(0, 4)}
-                            </p>
-                        </>
-                    ) : (<></>)
-                  }
-                </Stack>
+              className="d-flex align-items-center justify-content-center w-100 rounded border border-dark"
+              style={{
+                height: "50%",
+                minHeight: "22rem",
+                backgroundColor: "rgba(0,0,0,0.6)" 
+              }}
+            >
+              {!topSong || !topSong.album?.images[0]?.url ? (
+                <p className="text-center text-light my-auto">No data available. Try refreshing.</p>
+              ) : (
+                <Image
+                  src={topSong.album.images[0].url}
+                  className="rounded-top w-100"
+                  style={{
+                    height: "22rem",
+                    objectFit: "cover",
+                  }}
+                />
+              )}
+              <Stack className="text-start fs-5 w-100 px-3 py-3">
+                  {topSong && topSong.artists ? (
+                      <>
+                          <p className="fw-semibold text-white m-0 text-truncate" style={{maxWidth: '21rem'}}>{topSong.name}</p>
+                          <p className="fw-normal text-light m-0 fs-6" style={{color: '#EBEBEB'}}>
+                            {topSong.artists?.map(artist => artist?.name).join(', ') + " • " + topSong.album.name + " • " + topSong.album.release_date.substring(0, 4)}
+                          </p>
+                      </>
+                  ) : (<></>)
+                }
               </Stack>
-              <div
-                className="mt-3 px-2 pb-2 rounded d-flex align-items-center justify-content-center"
-                style={{
-                  height: "100%",
-                  width: "100%",
-                  backgroundColor: "rgba(0,0,0,0.6)",
-                }}
-              >
-                <Stack className="text-start fs-5 w-100 pt-1" gap={0}>
-                  <p className="fw-normal text-warning m-0 fs-5">{`${songCounts.length} tracks`}</p>
-                  <p className="fw-normal text-warning fs-5 m-0">
-                  {`${songCounts.reduce((sum, song) => sum + song.count, 0)} plays`}
+            </Stack>
+            <div
+              className="mt-3 px-2 pb-2 rounded border border-dark d-flex align-items-center justify-content-center"
+              style={{
+                height: "100%",
+                width: "100%",
+                backgroundColor: "rgba(0,0,0,0.6)",
+              }}
+            >
+              <Stack className="text-start fs-5 w-100 pt-1" gap={0}>
+                <p className="fw-normal text-warning m-0 fs-5">{`${songCounts.length} tracks`}</p>
+                <p className="fw-normal text-warning fs-5 m-0">
+                {`${songCounts.reduce((sum, song) => sum + song.count, 0)} plays`}
                 </p>
                 <p className="fw-normal text-warning mb-0 fs-5">
                   {`${avgPlays.toFixed(2)} plays per day`}
                 </p>
-                </Stack>
-              </div>
+              </Stack>
+            </div>
           </Col>
         </Row>
       </div>

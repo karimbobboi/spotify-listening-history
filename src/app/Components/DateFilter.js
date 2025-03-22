@@ -3,7 +3,7 @@ import { ButtonGroup } from "react-bootstrap";
 
 const DateFilter = ({ date_filter, active_date, handleDateFilterClicked }) => {
   return (
-    <ButtonGroup style={{ width: "fit-content" }}>
+    <ButtonGroup className="border border-dark" style={{ width: "fit-content" }}>
       {date_filter.map((filter, index) => (
         <button
           className={date_filter[active_date] === filter 

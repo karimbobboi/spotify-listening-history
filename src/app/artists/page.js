@@ -298,10 +298,7 @@ export default function Artists() {
   useEffect(() => {
     const [start, end] = filteredDates();
 
-    if(start == null && end == null) {
-      setData(raw_csv_data);
-    }
-    else if (start == end) {
+    if (start == end) {
       setData(raw_csv_data);
     } else {
       setData(
@@ -398,6 +395,34 @@ export default function Artists() {
     fetchArtistDetails();
   }, [selectedArtist]);
 
+  const handleDownloadCSV = () => {
+    if (!csv_data || csv_data.length === 0) return;
+    
+    const csvRows = csv_data.map(track => {
+      const date = new Date(track[`${Object.keys(track)[0]}`]);
+      return [
+        `"${date.toISOString()}"`,
+        `"${track.song}"`,
+        `"${track.artist}"`,
+        `"${track.album}"`,
+        `"${track.link}"`,
+        `"${new Date().toISOString()}"`
+      ].join(',');
+    });
+
+    const csvContent = `"date_time","song","artist","album","link","last_updated"\n${csvRows.join('\n')}`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'spotify_listening_history.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <main style={{ position: "relative", zIndex: 1 }}>
       <DynamicBackground />
@@ -435,12 +460,11 @@ export default function Artists() {
         <Row className="px-3 bg-transparent">
           <Col className="px-3" sm={12} style={{ minHeight: "70vh" }}>
             {loading ? (
-              <div className="bg-dark text-center position-relative h-100 mx-auto">
-                <Spinner
-                  className="position-absolute top-50"
-                  animation="border"
-                  variant="warning"
-                />
+              <div className="d-flex justify-content-center align-items-center" style={{ height: "70vh" }}>
+                <div className="text-center">
+                  <Spinner animation="border" variant="warning" style={{ width: "3rem", height: "3rem" }} />
+                  <p className="text-light mt-3">Loading your listening history...</p>
+                </div>
               </div>
             ) : (
               <Row className="g-1">
@@ -450,30 +474,30 @@ export default function Artists() {
                     <Col sm={12}>
                       <Row className="g-2 mb-2">
                         <Col sm={3} className="pe-2">
-                          <div className="p-3 rounded h-100" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+                          <div className="p-3 rounded h-100 border border-dark" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
                             <h5 className="text-warning mb-1">Total Artists</h5>
                             <h2 className="text-light mb-0">{artistCounts.length}</h2>
                             <p className="text-light opacity-75 mb-0 small">unique artists played</p>
                           </div>
                         </Col>
                         <Col sm={3} className="px-2">
-                          <div className="p-3 rounded h-100" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+                          <div className="p-3 rounded h-100 border border-dark" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
                             <h5 className="text-warning mb-1">Daily Average</h5>
                             <h2 className="text-light mb-0">{avgPlays.toFixed(1)}</h2>
                             <p className="text-light opacity-75 mb-0 small">artists per day</p>
                           </div>
                         </Col>
                         <Col sm={3} className="px-2">
-                          <div className="p-3 rounded h-100" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+                          <div className="p-3 rounded h-100 border border-dark" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
                             <h5 className="text-warning mb-1">Most Played</h5>
                             <h2 className="text-light mb-0">{artistCounts[artistCounts.length - 1]?.count}</h2>
                             <p className="text-light opacity-75 mb-0 small text-truncate">{artistCounts[artistCounts.length - 1]?.artist}</p>
                           </div>
                         </Col>
                         <Col sm={3} className="ps-2">
-                          <div className="p-3 rounded h-100" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+                          <div className="p-3 rounded h-100 border border-dark" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
                             <h5 className="text-warning mb-1">Time Range</h5>
-                            <p className="text-light mb-0">{startDate} - {endDate}</p>
+                            <h2 className="text-light mb-0">{startDate} - {endDate}</h2>
                             <p className="text-light opacity-75 mb-0 small">listening period</p>
                           </div>
                         </Col>
@@ -482,11 +506,13 @@ export default function Artists() {
 
                     {/* Artist List and Details */}
                     <Col sm={3} className="pe-2">
-                      <div className="rounded" style={{ backgroundColor: "rgba(0,0,0,0.6)", maxHeight: "60vh", scrollbarWidth: "none", overflowY: "auto" }}>
+                      <div className="rounded border border-dark" 
+                        style={{ backgroundColor: "rgba(0,0,0,0.6)", 
+                          maxHeight: "60vh", scrollbarWidth: "none", overflowY: "auto" }}>
                         <table className="table-borderless mb-0 w-100 h-100" style={{
                             tableLayout: "fixed", borderSpacing: "0.8rem", 
                             backgroundColor: "rgba(0,0,0,0.3)"
-                            }}>
+                        }}>
                           <thead>
                             <tr className="text-warning fw-semibold" style={{ fontSize: "1.1rem" }}>
                               <th className="border-0 ps-2">Artist</th>
@@ -514,7 +540,7 @@ export default function Artists() {
                     {/* Selected Artist Details */}
                     <Col sm={6} className="px-2">
                       {selectedArtist && (
-                        <div className="rounded h-100" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+                        <div className="rounded border border-dark h-100" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
                           <div className="p-3">
                             <h3 className="text-light mb-1">{selectedArtist.artist}</h3>
                             
@@ -554,7 +580,7 @@ export default function Artists() {
                                     {(() => {
                                       const firstTrack = csv_data
                                         .find(track => track.artist.includes(selectedArtist.artist));
-                                        const date_time = `${Object.keys(csv_data[0])[0]}`;console.log("firstTrack", firstTrack)
+                                        const date_time = `${Object.keys(csv_data[0])[0]}`;
                                       
                                       return (
                                         <>
@@ -632,18 +658,26 @@ export default function Artists() {
                     <Col sm={3} className="ps-2">
                       <div>
                         {selectedArtistDetails && selectedArtistDetails.images && selectedArtistDetails.images.length > 0 && (
-                          <div className="mb-2 rounded">
+                          <div className="mb-2 rounded border border-dark">
                             <Image
                               src={selectedArtistDetails.images[0].url}
                               width="100%"
-                              height="276rem"
                               className="rounded"
-                              style={{ objectFit: "cover" }}
+                              style={{ 
+                                objectFit: "contain",
+                                aspectRatio: "1/1",
+                                cursor: 'pointer'
+                              }}
+                              onClick={() => {
+                                if (selectedArtistDetails?.external_urls?.spotify) {
+                                  window.open(selectedArtistDetails.external_urls.spotify, '_blank');
+                                }
+                              }}
                             />
                           </div>
                         )}
                         {topArtist && selectedArtistDetails && selectedArtistDetails.genres && selectedArtistDetails.genres.length > 0 && (
-                          <div className="rounded p-2" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+                          <div className="rounded p-2 border border-dark" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
                             <Row>
                               <Col>
                                 <div>
@@ -672,6 +706,37 @@ export default function Artists() {
                             </Row>
                           </div>
                         )}
+                        <Stack direction="horizontal" gap={2} className="px-2 py-2 mt-2 rounded border border-dark" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+                          <button
+                            className={`rounded p-1 ${styles.refreshBtn}`}
+                            onClick={handleRefreshClicked} 
+                            title="Refresh listening history"
+                            style={{ 
+                              fontSize: "1rem",
+                              backgroundColor: "transparent",
+                              border: "none",
+                              transition: "opacity 0.2s ease-in-out"
+                            }}>
+                            <i className="bi bi-arrow-repeat text-light"></i>
+                          </button>
+                          <button
+                            className={`rounded p-1 ${styles.refreshBtn}`}
+                            onClick={handleDownloadCSV}
+                            title="Download as CSV file"
+                            style={{ 
+                              fontSize: "1rem",
+                              backgroundColor: "transparent",
+                              border: "none",
+                              transition: "opacity 0.2s ease-in-out"
+                            }}>
+                            <i className="bi bi-file-earmark-arrow-down text-light"></i>
+                          </button>
+                          <p className="ms-auto my-0 small text-light opacity-75"
+                            style={{
+                              fontWeight: '250',  
+                            }}
+                          >{`Last updated: ${last_updated}`}</p>
+                        </Stack>
                       </div>
                     </Col>
                   </>
@@ -682,18 +747,6 @@ export default function Artists() {
                 )}
               </Row>
             )}
-            
-            <div className="d-flex align-items-center">
-              <button
-                className={`rounded p-0 ${styles.refreshBtn}`}
-                onClick={handleRefreshClicked}
-                style={{ fontSize: "1.3rem" }}>
-                <i className="bi bi-arrow-repeat text-light"></i>
-              </button>
-              <p className="ms-auto my-auto text-light opacity-75">
-                Last updated: {last_updated}
-              </p>
-            </div>
           </Col>
         </Row>
       </div>
