@@ -2,7 +2,6 @@
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-
 import { useRouter, useSearchParams } from 'next/navigation';
 import queryString from 'query-string';
 import DynamicBackground from "/src/app/components/DynamicBackground.js";

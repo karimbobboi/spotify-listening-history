@@ -249,10 +249,26 @@ export default function Home() {
 
   const formatDate = (isoString) => {
     const date = new Date(isoString);
+    const now = new Date();
+    const diffInMillis = now - date;
+    const diffInMinutes = Math.floor(diffInMillis / (1000 * 60));
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInDays < 7) {
+      if (diffInMinutes < 60) {
+        return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`;
+      } else if (diffInHours < 24) {
+        return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
+      } else {
+        return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
+      }
+    }
+
     return date.toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
     });
   };
 
