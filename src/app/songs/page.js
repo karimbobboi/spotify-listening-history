@@ -16,6 +16,7 @@ import NavBar from "/src/app/Components/NavBar";
 import DynamicBackground from "/src/app/Components/DynamicBackground";
 import DateFilter from "/src/app/Components/DateFilter";
 import SearchBar from "../Components/SearchBar";
+import useSpotifyAuth from "/src/app/useSpotifyAuth.js";
 
 export default function Songs() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function Songs() {
   const [raw_csv_data, setRawData] = useState([]);
   const [csv_data, setData] = useState([]);
   const [last_updated, setLast_updated] = useState("");
-  const [access_token, setAccessToken] = useState(null);
+  const { access_token, getRefreshToken } = useSpotifyAuth();
   const [topSong, setTopSong] = useState(null);
   const [songCounts, setSongCounts] = useState([]);
   const [isDescending, setIsDescending] = useState(true);
@@ -89,30 +90,23 @@ export default function Songs() {
 
   const fetchRecentlyPlayed = async () => {
     if (!access_token) return;
-    try {
-      const response = await fetch(
-        "https://api.spotify.com/v1/me/player/recently-played?limit=50",
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        },
-      );
 
-      if (response) {
-        if (response.status == 401) {
-          console.log("api key expired.");
-          router.push("/login");
-        } else {
-          const data = await response.json();
-          return data;
-        }
+    try {
+      const response = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=50", {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      if (response.status === 401) {
+        console.log("Access token expired. Refreshing...");
+        await getRefreshToken();
+        return;
       }
+
+      const data = await response.json();
+      setRecentTracks(data.items || []);
     } catch (error) {
       console.error("Error fetching recently played tracks:", error);
     }
-
-    return;
   };
 
   const get_most_played = () => {
@@ -217,26 +211,8 @@ export default function Songs() {
   };
 
   useEffect(() => {
-    const getRecentlyPlayed = async () => {
-      const data = await fetchRecentlyPlayed();
-      if (data) {
-        setRecentTracks(data.items || []);
-      }
-      setLoading(false);
-    };
-
-    const accessToken = localStorage.getItem("spotify_access_token");
-    if (!accessToken) {
-      console.log("no access token found");
-      router.push("/login");
-      return;
-    } else {
-      setAccessToken(accessToken);
-    }
-
-    getRecentlyPlayed();
-    setLast_updated(new Date().toLocaleString());
-  }, []);
+    fetchRecentlyPlayed();
+  }, [access_token]);
 
   useEffect(() => {
     const postList = async () => {
@@ -261,6 +237,11 @@ export default function Songs() {
       }
     };
 
+    if(recentTracks.length > 0) {
+      setLast_updated(new Date().toLocaleString());
+      setLoading(false);
+    }
+    
     postList();
   }, [recentTracks]);
 

@@ -198,28 +198,34 @@ export default function Albums() {
     }
   };
 
-  useEffect(() => {
-    const fetchRecentlyPlayed = async () => {
-      if (!access_token) return;
-  
-      try {
-        const response = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=50", {
-          headers: { Authorization: `Bearer ${access_token}` },
-        });
-  
-        if (response.status === 401) {
-          console.log("Access token expired. Refreshing...");
-          await getRefreshToken();
-          return;
-        }
-  
-        const data = await response.json();
-        setRecentTracks(data.items || []);
-      } catch (error) {
-        console.error("Error fetching recently played tracks:", error);
-      }
-    };
+  const handleRefreshClicked = async () => {
+    setLoading(true);
+    await fetchRecentlyPlayed();
+    setLoading(false);
+  };
 
+  const fetchRecentlyPlayed = async () => {
+    if (!access_token) return;
+
+    try {
+      const response = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=50", {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      if (response.status === 401) {
+        console.log("Access token expired. Refreshing...");
+        await getRefreshToken();
+        return;
+      }
+
+      const data = await response.json();
+      setRecentTracks(data.items || []);
+    } catch (error) {
+      console.error("Error fetching recently played tracks:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchRecentlyPlayed();
   }, [access_token]);
 
@@ -346,33 +352,6 @@ export default function Albums() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const handleRefreshClicked = async () => {
-    setLoading(true);
-    const fetchRecentlyPlayed = async () => {
-      if (!access_token) return;
-  
-      try {
-        const response = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=50", {
-          headers: { Authorization: `Bearer ${access_token}` },
-        });
-  
-        if (response.status === 401) {
-          console.log("Access token expired. Refreshing...");
-          await getRefreshToken();
-          return;
-        }
-  
-        const data = await response.json();
-        setRecentTracks(data.items || []);
-      } catch (error) {
-        console.error("Error fetching recently played tracks:", error);
-      }
-    };
-
-    await fetchRecentlyPlayed();
-    setLoading(false);
   };
 
   return (
@@ -554,18 +533,6 @@ export default function Albums() {
                                     </span>
                                   </div>
                                 </div>
-                                {selectedAlbumDetails?.external_urls?.spotify && (
-                                    <Image 
-                                      src="https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg"
-                                      width={24}
-                                      height={24}
-                                      className="float-end"
-                                      style={{ 
-                                        cursor: 'pointer'
-                                      }}
-                                      onClick={() => window.open(selectedAlbumDetails.external_urls.spotify, '_blank')}
-                                    />
-                                  )}
                               </div>
                             </div>
                           </div>
@@ -637,6 +604,17 @@ export default function Albums() {
                           }}>
                           <i className="bi bi-file-earmark-arrow-down text-light"></i>
                         </button>
+                        {selectedAlbumDetails?.external_urls?.spotify && (
+                          <Image 
+                            src="https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg"
+                            width={18}
+                            className="float-end mb-1 ms-1"
+                            style={{ 
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => window.open(selectedAlbumDetails.external_urls.spotify, '_blank')}
+                          />
+                        )}
                         <p className="ms-auto my-0 small text-light opacity-75"
                           style={{
                             fontWeight: '250',  

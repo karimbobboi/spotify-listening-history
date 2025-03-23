@@ -5,6 +5,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import styles from "/src/app/page.module.css";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import useSpotifyAuth from "/src/app/useSpotifyAuth.js";
 import {
   Row,
   Col,
@@ -24,7 +25,7 @@ export default function Home() {
   const [raw_csv_data, setRawData] = useState([]);
   const [csv_data, setData] = useState([]);
   const [last_updated, setLast_updated] = useState("");
-  const [access_token, setAccessToken] = useState(null);
+  const { access_token, getRefreshToken } = useSpotifyAuth();
   const [topSong, setTopSong] = useState(null);
   const [songCounts, setSongCounts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,13 +54,13 @@ export default function Home() {
       const trackArtists = track.artist.split("|");
       trackArtists.forEach(artist => {
         artists.add(artist);
-        artistCounts[artist] = (artistCounts[artist] || 0) + 1;
+        artistCounts[artist] = (artistCounts[artist] || 0) + (track.count || 1);
       });
       songs.add(track.song);
       albums.add(track.album);
 
-      const hour = new Date(track.date_time).getHours();
-      hourCounts[hour]++;
+      const hour = new Date(track[`${Object.keys(track)[0]}`]).getHours();
+      hourCounts[hour] += (track.count || 1);
     });
 
     const topArtist = Object.entries(artistCounts)
@@ -129,29 +130,23 @@ export default function Home() {
 
   const fetchRecentlyPlayed = async () => {
     if (!access_token) return;
-    try {
-      const response = await fetch(
-        "https://api.spotify.com/v1/me/player/recently-played?limit=50",
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-          },
-        },
-      );
 
-      if (response) {
-        if (response.status == 401) {
-          console.log("api key expired.");
-          router.push("/login");
-        } else {
-          const data = await response.json();
-          return data;
-        }
+    try {
+      const response = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=50", {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      if (response.status === 401) {
+        console.log("Access token expired. Refreshing...");
+        await getRefreshToken();
+        return;
       }
+
+      const data = await response.json();
+      setRecentTracks(data.items || []);
     } catch (error) {
       console.error("Error fetching recently played tracks:", error);
     }
-    return;
   };
 
   const get_most_played = () => {
@@ -167,23 +162,22 @@ export default function Home() {
     });
 
     const sorted_songs = Object.values(track_counts).sort(
-      (a, b) => a.count - b.count
+      (a, b) => b.count - a.count
     );
 
-    if(searchTerm.length > 0) {
-      const songs = sorted_songs.filter((song) => {
-        song.count > 1
-        return song.song.toLowerCase().includes(searchTerm.toLowerCase()) 
-        || song.artist.toLowerCase().includes(searchTerm.toLowerCase())
-        || song.album.toLowerCase().includes(searchTerm.toLowerCase());}
-      );
+    const searchTermLower = searchTerm.toLowerCase();
+    const filtered_songs = searchTerm
+      ? sorted_songs.filter(song => 
+          song.song.toLowerCase().includes(searchTermLower) ||
+          song.artist.toLowerCase().includes(searchTermLower) ||
+          song.album.toLowerCase().includes(searchTermLower)
+        )
+      : sorted_songs;
 
-      setSongCounts(Object.values(songs));
-    }
-    else setSongCounts(Object.values(sorted_songs));
+    setSongCounts(filtered_songs);
   
     return { 
-      most_played: sorted_songs[sorted_songs.length - 1], 
+      most_played: sorted_songs[0],
       songs_dict: sorted_songs 
     };
   };
@@ -263,26 +257,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const getRecentlyPlayed = async () => {
-      const data = await fetchRecentlyPlayed();
-      if (data) {
-        setRecentTracks(data.items || []);
-      }
-      setLoading(false);
-    };
-
-    const accessToken = localStorage.getItem("spotify_access_token");
-    if (!accessToken) {
-      console.log("no access token found");
-      router.push("/login");
-      return;
-    } else {
-      setAccessToken(accessToken);
-    }
-
-    getRecentlyPlayed();
-    setLast_updated(new Date().toLocaleString());
-  }, []);
+    fetchRecentlyPlayed();
+  }, [access_token]);
 
   useEffect(() => {
     const postList = async () => {
@@ -305,6 +281,11 @@ export default function Home() {
         console.error("Error updating CSV:", error);
       }
     };
+
+    if(recentTracks.length > 0) {
+      setLast_updated(new Date().toLocaleString());
+      setLoading(false);
+    }
 
     postList();
   }, [recentTracks]);
@@ -352,11 +333,18 @@ export default function Home() {
 
   useEffect(() => {
     get_most_played();
+    if (songCounts.length > 0) {
+      calculateStats(songCounts);
+    }
   }, [searchTerm]);
 
   useEffect(() => {
     calculateAveragePlays();
   }, [songCounts]);
+
+  useEffect(() => {
+    console.log("topSong");console.log(topSong);
+  }, [topSong])
 
   return (
     <main style={{ position: "relative", zIndex: 1, height: "100vh", overflow: "hidden" }}>
@@ -383,9 +371,6 @@ export default function Home() {
               </Col>
 
               <Col>
-                {/* <p className="text-end fw-light text-warning fs-5 my-auto me-2">
-                  {`${startDate || ''} - ${endDate ? endDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ''}`}
-                </p> */}
               </Col>
             </Row>
           </Col>
@@ -415,7 +400,7 @@ export default function Home() {
                 </Col>
                 <Col sm={3}>
                   <div className="rounded p-3 h-100 border border-dark" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
-                    <h3 className="text-warning mb-0">{csv_data.length}</h3>
+                    <h3 className="text-warning mb-0">{songCounts.reduce((sum, track) => sum + track.count, 0)}</h3>
                     <p className="text-light mb-0">Total Plays</p>
                   </div>
                 </Col>
@@ -429,13 +414,20 @@ export default function Home() {
                   </div>
                 </div>
                 {loading ? (
-                  <div className="text-center">
+                  <div className="d-flex justify-content-center align-items-center h-75">
                     <Spinner animation="border" variant="warning" />
                   </div>
                 ) : (
                   <div className="overflow-auto" style={{ maxHeight: "calc(80vh - 200px)", overflowY: "auto",
                     scrollbarWidth: "none", }}>
-                    {csv_data.toReversed().map((item, index) => (
+                    {(searchTerm 
+                      ? csv_data.filter(item => 
+                          item.song.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          item.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          item.album.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                      : csv_data
+                    ).toReversed().map((item, index) => (
                       <div
                         key={index}
                         className="mb-2 p-2 rounded"
@@ -473,9 +465,11 @@ export default function Home() {
                 backgroundColor: !topSong ? "rgba(0,0,0,0.6)" : "transparent",
               }}
             >
-              {!topSong ? (
-                <div className="d-flex align-items-center justify-content-center h-100">
-                  <p className="text-light mb-0">No data available</p>
+              {!topSong || topSong.error ? (
+                <div className="d-flex align-items-center justify-content-center h-100"
+                  style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+                >
+                  <p className="text-light mb-0 text-center">No data available<br />Try refreshing the page</p>
                 </div>
               ) : (
                 <Image
@@ -487,7 +481,6 @@ export default function Home() {
             </div>
 
             <div className="rounded p-3 border border-dark" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
-              <h5 className="text-warning mb-3">More Stats</h5>
               <div className="text-light">
                 <p className="mb-2">
                   Most active at{" "}

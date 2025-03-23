@@ -689,20 +689,6 @@ export default function Artists() {
                                   </div>
                                 </div>
                               </Col>
-                              <Col sm={2}>
-                                <Image 
-                                  className="float-end my-3"
-                                  src="https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg"
-                                  width={20}
-                                  height={20}
-                                  style={{ cursor: 'pointer' }}
-                                  onClick={() => {
-                                    if (selectedArtistDetails?.external_urls?.spotify) {
-                                      window.open(selectedArtistDetails.external_urls.spotify, '_blank');
-                                    }
-                                  }}
-                                />
-                              </Col>
                             </Row>
                           </div>
                         )}
@@ -731,6 +717,17 @@ export default function Artists() {
                             }}>
                             <i className="bi bi-file-earmark-arrow-down text-light"></i>
                           </button>
+                          {selectedArtistDetails?.external_urls?.spotify && (
+                            <Image 
+                              src="https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg"
+                              width={18}
+                              className="float-end mb-1 ms-1"
+                              style={{ 
+                                cursor: 'pointer'
+                              }}
+                              onClick={() => window.open(selectedArtistDetails.external_urls.spotify, '_blank')}
+                            />
+                          )}
                           <p className="ms-auto my-0 small text-light opacity-75"
                             style={{
                               fontWeight: '250',  
