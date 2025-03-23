@@ -14,7 +14,7 @@ import {
 import NavBar from "/src/app/Components/NavBar";
 import DynamicBackground from "/src/app/Components/DynamicBackground";
 import DateFilter from "/src/app/Components/DateFilter";
-import SearchBar from "../Components/SearchBar";
+import SearchBar from "../components/SearchBar";
 import useSpotifyAuth from "/src/app/useSpotifyAuth.js";
 
 export default function Albums() {
@@ -274,19 +274,6 @@ export default function Albums() {
       );
     }
   }, [raw_csv_data, active_date]);
-
-  // useEffect(() => {
-  //   const [start, end] = filteredDates();
-  //   if (start < end) {
-  //     const filteredData = raw_csv_data.filter((element) => {
-  //       const date = new Date(element[`${Object.keys(element)[0]}`]);
-  //       return date >= start && date <= end;
-  //     });
-  //     setData(filteredData);
-  //   } else {
-  //     setData(raw_csv_data);
-  //   }
-  // }, [active_date]);
 
   useEffect(() => {
     get_most_played_albums();

@@ -15,7 +15,7 @@ import {
 import NavBar from "/src/app/Components/NavBar";
 import DynamicBackground from "/src/app/Components/DynamicBackground";
 import DateFilter from "/src/app/Components/DateFilter";
-import SearchBar from "../Components/SearchBar";
+import SearchBar from "../components/SearchBar";
 import useSpotifyAuth from "/src/app/useSpotifyAuth.js";
 
 export default function Songs() {
@@ -241,7 +241,7 @@ export default function Songs() {
       setLast_updated(new Date().toLocaleString());
       setLoading(false);
     }
-    
+
     postList();
   }, [recentTracks]);
 

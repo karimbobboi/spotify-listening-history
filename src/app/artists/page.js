@@ -14,7 +14,7 @@ import {
 import NavBar from "/src/app/Components/NavBar";
 import DynamicBackground from "/src/app/Components/DynamicBackground";
 import DateFilter from "/src/app/Components/DateFilter";
-import SearchBar from "../Components/SearchBar";
+import SearchBar from "../components/SearchBar";
 import useSpotifyAuth from "/src/app/useSpotifyAuth.js";
 
 export const clientId = process.env.NEXT_PUBLIC_clientId;
